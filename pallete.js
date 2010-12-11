@@ -1,0 +1,2 @@
+
+var Pallete = ["#000000","#CD5C5C","#FFC0CB","#FFA07A","#FFD700","#E6E6FA","#ADFF2F","#00FFFF", "#FFF8DC","#F0FFFF","#C0C0C0"];
