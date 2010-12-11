@@ -22,7 +22,7 @@ function contact_loader(api_function_name,api_function_arguments_builder
 		this.queue.push( { contact:contact, 
 							fields:fields, 
 							done: false, on_done:callback,size_factor:size_factor});
-	}
+	};
 	
 	var this_local = this;
 
