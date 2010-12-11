@@ -14,15 +14,15 @@ var friends_loader = new contact_loader("execute", function(details_requests) {
 				if (i!=0) {
 					code += ",";
 				}
-				code += "API.friends.get({uid:" + details_requests[i].contact.uid
+				code += "API.friends.get({uid:" + details_requests[i].arguments.contact.uid
 									+ "})";
 			}				
 			code += "]; return ret;";
 			return {api_id:"1918079",code:code,v:"3.0"};			
-		}, function(contact,response) {
-			contact.friends = {};
+		}, function(arguments,response) {
+			arguments.contact.friends = {};
 			for (var uid_index=0;uid_index<response.length;uid_index++) {
-				contact.friends[response[uid_index]]=true;
+				arguments.contact.friends[response[uid_index]]=true;
 			}		
 		},24);
 
@@ -32,18 +32,37 @@ var profile_loader = new contact_loader("getProfiles", function(details_requests
 				if (i!=0) {
 					uids += ",";
 				}
-				uids += details_requests[i].contact.uid;
+				uids += details_requests[i].arguments.contact.uid;
 			}				
 			return {uids:uids, fields:"uid,first_name,photo"};
-		}, function(contact,response) {
+		}, function(arguments,response) {
 			for (var key in response){
 				if (key != "uid") {
-					contact[key] = response[key];
+					arguments.contact[key] = response[key];
 				}
 			}
 		
 		},240);
-		
+
+/*
+var mutual_friends_loader = new contact_loader("execute", function(details_requests) {
+	var code = "var ret = [";
+	for (var i = 0; i < details_requests.length; i++) {
+		if (i!=0) {
+			code += ",";
+		}
+		code += "API.friends.getMutual({target_uid:" + details_requests[i].arguments.contact_1.uid
+							+ ", source_uid: " + details_requests[i].arguments.contact_2.uid + "})";
+	}				
+	code += "]; return ret;";
+	return {api_id:"1918079",code:code,v:"3.0"};			
+}, function(arguments,response) {
+	arguments.contact_1.mutual_friends[arguments.contact_2.uid] = response;
+	arguments.contact_2.mutual_friends[arguments.contact_1.uid] = response;
+},64);
+*/
+
+
 setInterval( function() {
 	if (friends_loader.queue.length != 0) {
 		friends_loader.send_next_request();
@@ -52,6 +71,10 @@ setInterval( function() {
 	{
 		if (profile_loader.queue.length != 0) {
 			profile_loader.send_next_request();
+		} else {
+			if (mutual_friends_loader.queue.length != 0) {
+				mutual_friends_loader.send_next_request();
+			}
 		}
 	}
 }, 400);
@@ -399,12 +422,12 @@ function process_output(user) {
 					var contact = loaded_contacts[uid];
 					if (!contact.first_name) {
 						profiles_left_to_load++;
-						profile_loader.queue_request(contact,"uid,first_name,photo", function(contact){
+						profile_loader.load({contact:contact,fields:"uid,first_name,photo"}, function(result_message){
 							profiles_left_to_load--;
 							if (profiles_left_to_load == 0) {
 								refreshGroupList(groups);
 							}
-						},1);
+						});
 					}
 							
 				}
@@ -451,12 +474,12 @@ setTimeout( function() {
 }, 1000);
 
 	function load_friends_of_contact_recursive(contact,depth_of_friends_retrival,callback) {
-		friends_loader.queue_request( contact, "uid", function( contact, result_msg) {
-			if (result_msg == "Success" && contact.friends){
+		friends_loader.load( {contact:contact, fields:"uid"}, function(result_message) {
+			if (result_message == "Success" && contact.friends){
 				loaded_contacts[contact.uid] = contact;
 			}
 
-			if (result_msg != "Success" || !contact.friends || depth_of_friends_retrival == 0) {
+			if (result_message != "Success" || !contact.friends || depth_of_friends_retrival == 0) {
 				callback(contact);
 				return;
 			}
@@ -471,7 +494,7 @@ setTimeout( function() {
 					}
 				});
 			}
-		},1);
+		});
 	}
 		
 		

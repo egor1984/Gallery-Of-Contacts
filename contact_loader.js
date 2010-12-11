@@ -7,8 +7,12 @@ function contact_loader(api_function_name,api_function_arguments_builder
 	this.contact_update_code = contact_update_code;
 	this.max_sum = max_sum;
 	this.queue = new Array();
+	
+	this.load = function( arguments,callback) {
+		this.queue_request(arguments, callback, 1);
+	}
 
-	this.queue_request = function( contact, fields, callback,size_factor) {		
+	this.queue_request = function( arguments, callback,size_factor) {		
 /*
 	if (contact.uid == 863449
 		|| contact.uid == 625145
@@ -19,8 +23,7 @@ function contact_loader(api_function_name,api_function_arguments_builder
 			return;
 	}
 */	
-		this.queue.push( { contact:contact, 
-							fields:fields, 
+		this.queue.push( { arguments:arguments, 
 							done: false, on_done:callback,size_factor:size_factor});
 	};
 	
@@ -49,11 +52,11 @@ function contact_loader(api_function_name,api_function_arguments_builder
 					details_request.done = true;
 					var new_size_factor = details_request.size_factor*2;
 					if (new_size_factor > this_local.max_sum) {
-						details_request.on_done(details_request.contact, "Request timeout");				
+						details_request.on_done("Request timeout");				
 					}
 					else
 					{
-						this_local.queue_request( details_request.contact,details_request.fields
+						this_local.queue_request( arguments
 											,details_request.on_done,new_size_factor);
 					}
 				}
@@ -71,21 +74,21 @@ function contact_loader(api_function_name,api_function_arguments_builder
 				if (data.error) {
 					if (data.error.error_msg == "Too many requests per second"
 						|| data.error.error_msg == "Runtime error: Run-time error: Too many API calls\n") {
-						this_local.queue_request( details_requests[i].contact, details_requests[i].fields
+						this_local.queue_request( details_requests[i].arguments
 												, details_requests[i].on_done,details_requests[i].size_factor);
 					}	else {
-						details_requests[i].on_done( details_requests[i].contact, data.error.error_msg);
+						details_requests[i].on_done( data.error.error_msg);
 					}
 				} else {
 					var details_request = details_requests[i];
 					var response = data.response[i];
 					if (response == false) {
-						details_request.on_done( details_request.contact, "Failure");
+						details_request.on_done( "Failure");
 						continue;
 					}					
-					this_local.contact_update_code(details_request.contact,response);
+					this_local.contact_update_code(details_request.arguments,response);
 					
-					details_request.on_done( details_request.contact, "Success");
+					details_request.on_done( "Success");
 				}
 				
 			}
