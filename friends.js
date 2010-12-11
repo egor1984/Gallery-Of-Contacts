@@ -537,19 +537,14 @@ function clone_graph_without_node(graph, node_id) {
 						for (var segment_index_2 = 0; segment_index_2 < segments.length;segment_index_2++) {
 							if (segment_index_2 != segment_index_1) {
 								var segment_2 = segments[segment_index_2];
-								if (segment_2[0] == segment_1[0] || segment_2[segment_2.length - 1] == segment_1[segment_1.length - 1]) {
+								if (segment_1[segment_1.length - 1] == segment_2[0]
+									|| segment_1[segment_1.length - 1] == segment_2[segment_2.length - 1]) {
+									segment_1.reverse();
+								}
+								if (segment_2[0] == segment_1[0]) {
 									segment_2.reverse();
 								}
-								if (segment_2[0] == segment_1[segment_1.length - 1]) {
-									segment_1.pop();
-//									graph = clone_graph_without_node(graph,segment_1[segment_1.length - 1]);
-									graph = clone_graph_without_node(graph,segment_2[0]);
-									segments[segment_index_1] = segment_1.concat(segment_2);
-									segments.splice(segment_index_2, 1);
-									segments_are_changed = true;
-									break;
-								}
-								if (segment_2[segment_2.length - 1] == segment_1[0]) {
+								if (segment_1[0] == segment_2[segment_2.length - 1]) {
 									segment_2.pop();
 									graph = clone_graph_without_node(segment_1[0]);
 									segments[segment_index_1] = segment_2.concat(segment_1);
