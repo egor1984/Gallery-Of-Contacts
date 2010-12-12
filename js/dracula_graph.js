@@ -232,9 +232,9 @@ Graph.Renderer.Raphael.prototype = {
 Graph.Layout = {};
 Graph.Layout.Spring = function(graph) {
                 this.graph = graph;
-                this.iterations = 500;
-                this.maxRepulsiveForceDistance = 6;
-                this.k = 2;
+                this.iterations = 5000;
+                this.maxRepulsiveForceDistance = 2;
+                this.k = 1.9;
                 this.c = 0.01;
                 this.maxVertexMovement = 0.5;
         };

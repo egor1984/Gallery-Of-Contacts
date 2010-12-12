@@ -304,24 +304,6 @@ function find_triples(user) {
 				}				
 			}
 		}
-		var friend = loaded_contacts[uid_of_friend_of_user];
-		if (friend && friend.mutual_friends) {
-			for (var uid in friend.mutual_friends) {
-				var mutual_friends = friend.mutual_friends[uid];
-				for (var i = 0; i < mutual_friends.length; i++) {
-					var triple = new Array();
-					triple.push(uid_of_friend_of_user);
-					triple.push(uid);
-					triple.push(mutual_friends[i]);
-					triple.sort(function(uid_1,uid_2) { return uid_1 - uid_2;});				
-	
-					var group = new Object({uids: triple,used_in_merged:false});
-					if (index_of_same_group(groups_3,group)==-1) {
-						groups_3.push(group);
-					}				
-				}
-			}
-		}		
 	}
 	return groups_3;
 }
@@ -514,30 +496,8 @@ setTimeout( function() {
 				}
 				friends_left_to_process--;
 				if (friends_left_to_process == 0) {
-					var pairs_left_to_process = 0;
-					for (var uid in contact.mutual_friends) {
-						var friend = loaded_contacts[uid];
-						if (friend) {
-							var mutual_friends = contact.mutual_friends[uid];
-							for (var mutual_friend_index = 0; mutual_friend_index < mutual_friends.length; mutual_friend_index++) {
-								var mutual_friend_uid = mutual_friends[mutual_friend_index];
-								var mutual_friend = {uid:Number(mutual_friend_uid)};
-								pairs_left_to_process++;
-								mutual_friends_loader.load({contact_1:friend,contact_2:mutual_friend},function(arguments,result_message) {
-									if (result_message == "Success" 
-										&& arguments.contact_2.mutual_friends 
-										&& arguments.contact_2.mutual_friends[arguments.contact_1.uid]){
-										loaded_contacts[arguments.contact_2.uid] = arguments.contact_2;
-									}
-									pairs_left_to_process--;
-									if (pairs_left_to_process == 0) {
-										process_output(contact);									
-									}
-								});
-								
-							}
-						}
-					}
+					process_output(contact);									
+
 					
 				}				
 			});
@@ -698,6 +658,7 @@ function clone_graph_without_node(graph, node_id) {
 			var skip_group = true;
 			for (var uid_index = 0;uid_index < group.uids.length;uid_index++) {
 				if (group.uids[uid_index] == get_app_user_uid()) {
+					group.uids.splice(uid_index,1);
 					skip_group = false;
 				}
 			}
@@ -715,7 +676,7 @@ function clone_graph_without_node(graph, node_id) {
 				else {
 					set = r.set().push(r.ellipse(node.point[0], node.point[1], 20, 15).attr({fill: color, stroke: color, "stroke-width": 2}));
 				}
-                set.push(r.text(node.point[0], node.point[1] + 35, node.label || node.id));
+                set.push(r.text(node.point[0], node.point[1] + 35, node.label || node.id).attr({fill:node.text_color}));
 				return set;
 			};
 			var path = find_path(edges_counter,group.uids);
@@ -726,12 +687,15 @@ function clone_graph_without_node(graph, node_id) {
 					swap_values(uid_1,uid_2);
 				}
 
+					var app_user = loaded_contacts[get_app_user_uid()];
 					var contact_1 = loaded_contacts[uid_1];
 					var contact_1_label = contact_1 && contact_1.first_name ? contact_1.first_name : uid_1;
-					g.addNode(uid_1,{render:renderer, label:contact_1_label});
+					var contact_1_text_color = app_user.friends[uid_1] ? "#4cbf9c" : "#aaaaaa";
+					g.addNode(uid_1,{render:renderer, label:contact_1_label, text_color:contact_1_text_color});
 					var contact_2 = loaded_contacts[uid_2];
 					var contact_2_label = contact_2 && contact_2.first_name ? contact_2.first_name : uid_2;
-					g.addNode(uid_2,{render:renderer,label:contact_2_label});
+					var contact_2_text_color = app_user.friends[uid_2] ? "#4cbf9c" : "#aaaaaa";
+					g.addNode(uid_2,{render:renderer,label:contact_2_label, text_color:contact_2_text_color});
 
 					if (edges_counter[[uid_1,uid_2]]) {
 						edges_counter[[uid_1,uid_2]].push(group_index);
@@ -751,8 +715,10 @@ function clone_graph_without_node(graph, node_id) {
 		var layouter = new Graph.Layout.Spring(g);
 		layouter.layout();
 		 
+		
+		g.edges.splice(0,g.edges.length);
 		/* draw the graph using the RaphaelJS draw implementation */
-		var renderer = new Graph.Renderer.Raphael('canvas', g, 827, 800);
+		var renderer = new Graph.Renderer.Raphael('canvas', g, 606, 500);
 		renderer.draw();
 //		alert(line_counter);
 	}
