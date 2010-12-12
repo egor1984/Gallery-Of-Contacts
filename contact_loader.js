@@ -52,11 +52,11 @@ function contact_loader(api_function_name,api_function_arguments_builder
 					details_request.done = true;
 					var new_size_factor = details_request.size_factor*2;
 					if (new_size_factor > this_local.max_sum) {
-						details_request.on_done("Request timeout");				
+						details_request.on_done(details_request.arguments,"Request timeout");				
 					}
 					else
 					{
-						this_local.queue_request( arguments
+						this_local.queue_request( details_request.arguments
 											,details_request.on_done,new_size_factor);
 					}
 				}
@@ -64,6 +64,9 @@ function contact_loader(api_function_name,api_function_arguments_builder
 		}, 10500);
 	
 		VK.api(this.api_function_name, this.api_function_arguments_builder(details_requests) , function(data) { 
+			if (data.error && data.error.error_msg == "Runtime error: Run-time error: Too many API calls\n") {
+				alert(data.error.error_msg);
+			}
 			for (var i = 0; i < details_requests.length; i++) {
 			
 				if (details_requests[i].done) {
@@ -72,23 +75,22 @@ function contact_loader(api_function_name,api_function_arguments_builder
 
 				details_requests[i].done = true;
 				if (data.error) {
-					if (data.error.error_msg == "Too many requests per second"
-						|| data.error.error_msg == "Runtime error: Run-time error: Too many API calls\n") {
+					if (data.error.error_msg == "Too many requests per second") {
 						this_local.queue_request( details_requests[i].arguments
 												, details_requests[i].on_done,details_requests[i].size_factor);
 					}	else {
-						details_requests[i].on_done( data.error.error_msg);
+						details_requests[i].on_done( details_requests[i].arguments,data.error.error_msg);
 					}
 				} else {
 					var details_request = details_requests[i];
 					var response = data.response[i];
 					if (response == false) {
-						details_request.on_done( "Failure");
+						details_request.on_done(details_request.arguments, "Failure");
 						continue;
 					}					
 					this_local.contact_update_code(details_request.arguments,response);
 					
-					details_request.on_done( "Success");
+					details_request.on_done(details_request.arguments, "Success");
 				}
 				
 			}

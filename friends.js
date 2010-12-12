@@ -44,7 +44,7 @@ var profile_loader = new contact_loader("getProfiles", function(details_requests
 		
 		},240);
 
-/*
+
 var mutual_friends_loader = new contact_loader("execute", function(details_requests) {
 	var code = "var ret = [";
 	for (var i = 0; i < details_requests.length; i++) {
@@ -57,10 +57,16 @@ var mutual_friends_loader = new contact_loader("execute", function(details_reque
 	code += "]; return ret;";
 	return {api_id:"1918079",code:code,v:"3.0"};			
 }, function(arguments,response) {
+	if (!arguments.contact_1.mutual_friends) {
+		arguments.contact_1.mutual_friends = {};
+	}
+	if (!arguments.contact_2.mutual_friends) {
+		arguments.contact_2.mutual_friends = {};
+	}
 	arguments.contact_1.mutual_friends[arguments.contact_2.uid] = response;
 	arguments.contact_2.mutual_friends[arguments.contact_1.uid] = response;
-},64);
-*/
+},25);
+
 
 
 setInterval( function() {
@@ -279,36 +285,44 @@ function find_dublicates_in_sorted_arrays(array_1,array_2,comparator) {
 }
 	
 	
-function find_triples(iteration_list,use_contacts_without_friends) {
+function find_triples(user) {
 	var groups_3 = new Array();
 	
-	
-	for (var i = 0; i < iteration_list.length; i++) {
-		var friend1 = iteration_list[i];
-		for (var j = i+1; j < iteration_list.length;j++) {
-			var friend2 = iteration_list[j];
-			if (is_friends(friend1,friend2)) {
-				for (var uid  in friend1.friends){
-					if (friend2.friends[uid] && ( use_contacts_without_friends || (loaded_contacts[uid] && loaded_contacts[uid].friends))) {
-						var triple = new Array();
-						triple.push(friend1.uid);
-						triple.push(friend2.uid);
-						triple.push(Number(uid));
-						triple.sort(function(uid_1,uid_2) { return uid_1 - uid_2;});
-						
+	for (var uid_of_friend_of_user  in user.friends){
+		var mutual_friends = user.mutual_friends[uid_of_friend_of_user];
+		if (mutual_friends) {
+			for (var i = 0; i < mutual_friends.length; i++) {
+				var triple = new Array();
+				triple.push(user.uid);
+				triple.push(uid_of_friend_of_user);
+				triple.push(mutual_friends[i]);
+				triple.sort(function(uid_1,uid_2) { return uid_1 - uid_2;});				
 
-						var group = new Object({uids: triple,used_in_merged:false});
-						if (index_of_same_group(groups_3,group)==-1) {
-							groups_3.push(group);
-						}
-					}
-				}	
+				var group = new Object({uids: triple,used_in_merged:false});
+				if (index_of_same_group(groups_3,group)==-1) {
+					groups_3.push(group);
+				}				
 			}
 		}
-	}
-
-
+		var friend = loaded_contacts[uid_of_friend_of_user];
+		if (friend && friend.mutual_friends) {
+			for (var uid in friend.mutual_friends) {
+				var mutual_friends = friend.mutual_friends[uid];
+				for (var i = 0; i < mutual_friends.length; i++) {
+					var triple = new Array();
+					triple.push(uid_of_friend_of_user);
+					triple.push(uid);
+					triple.push(mutual_friends[i]);
+					triple.sort(function(uid_1,uid_2) { return uid_1 - uid_2;});				
 	
+					var group = new Object({uids: triple,used_in_merged:false});
+					if (index_of_same_group(groups_3,group)==-1) {
+						groups_3.push(group);
+					}				
+				}
+			}
+		}		
+	}
 	return groups_3;
 }
 	
@@ -356,7 +370,7 @@ function get_common_uids(groups,group_indexes) {
 
 
 function process_output(user) {
- 
+ /*
 	var iteration_list = new Array();
 	if (user.friends) {
 		iteration_list.push(user);
@@ -378,9 +392,8 @@ function process_output(user) {
 		}
 		iteration_list.sort(function(contact1,contact2) { return contact1.uid - contact2.uid;});
 	}
-
-	var groups_3 = find_triples(iteration_list,true);
-
+*/
+/*
 	var extended_contacts = new Array();
 	var unloaded_extended_uids = new Array();
 	for (var i = 0; i<groups_3.length;i++) {
@@ -422,7 +435,7 @@ function process_output(user) {
 					var contact = loaded_contacts[uid];
 					if (!contact.first_name) {
 						profiles_left_to_load++;
-						profile_loader.load({contact:contact,fields:"uid,first_name,photo"}, function(result_message){
+						profile_loader.load({contact:contact,fields:"uid,first_name,photo"}, function(arguments,result_message){
 							profiles_left_to_load--;
 							if (profiles_left_to_load == 0) {
 								refreshGroupList(groups);
@@ -437,8 +450,30 @@ function process_output(user) {
 		}); 
 		
 	}
-
-	
+*/
+	if (user.mutual_friends) {
+		var groups_3 = find_triples(user);
+		var groups = merge_groups(4,11,groups_3);
+		
+		var uids = get_distinct_uids(groups);
+		var profiles_left_to_load = 0;
+		for (var uid in uids){
+			if (!loaded_contacts[uid]) {
+				loaded_contacts[uid] = {uid:uid};
+			}
+			var contact = loaded_contacts[uid];
+			if (!contact.first_name) {
+				profiles_left_to_load++;
+				profile_loader.load({contact:contact,fields:"uid,first_name,photo"}, function(arguments,result_message){
+					profiles_left_to_load--;
+					if (profiles_left_to_load == 0) {
+						refreshGroupList(groups);
+					}
+				});
+			}
+					
+		}
+	}
 }
 
 
@@ -466,15 +501,54 @@ setTimeout( function() {
 
 	loaded_contacts[userContact.uid] = userContact;
 
-	load_friends_of_contact_recursive(userContact, 1,function(contact) {
-		process_output(userContact);
+	load_friends_of_contact_recursive(userContact, 0,function(contact) {
+		var friends_left_to_process = 0;
+		for (var uid in contact.friends) {
+			friends_left_to_process++;
+			var friend = {uid:Number(uid)};
+			mutual_friends_loader.load({contact_1:contact,contact_2:friend},function(arguments,result_message) {
+				if (result_message == "Success" 
+					&& arguments.contact_2.mutual_friends 
+					&& arguments.contact_2.mutual_friends[arguments.contact_1.uid]){
+					loaded_contacts[arguments.contact_2.uid] = arguments.contact_2;
+				}
+				friends_left_to_process--;
+				if (friends_left_to_process == 0) {
+					var pairs_left_to_process = 0;
+					for (var uid in contact.mutual_friends) {
+						var friend = loaded_contacts[uid];
+						if (friend) {
+							var mutual_friends = contact.mutual_friends[uid];
+							for (var mutual_friend_index = 0; mutual_friend_index < mutual_friends.length; mutual_friend_index++) {
+								var mutual_friend_uid = mutual_friends[mutual_friend_index];
+								var mutual_friend = {uid:Number(mutual_friend_uid)};
+								pairs_left_to_process++;
+								mutual_friends_loader.load({contact_1:friend,contact_2:mutual_friend},function(arguments,result_message) {
+									if (result_message == "Success" 
+										&& arguments.contact_2.mutual_friends 
+										&& arguments.contact_2.mutual_friends[arguments.contact_1.uid]){
+										loaded_contacts[arguments.contact_2.uid] = arguments.contact_2;
+									}
+									pairs_left_to_process--;
+									if (pairs_left_to_process == 0) {
+										process_output(contact);									
+									}
+								});
+								
+							}
+						}
+					}
+					
+				}				
+			});
+		}
 	});
 	
 
 }, 1000);
 
 	function load_friends_of_contact_recursive(contact,depth_of_friends_retrival,callback) {
-		friends_loader.load( {contact:contact, fields:"uid"}, function(result_message) {
+		friends_loader.load( {contact:contact, fields:"uid"}, function(arguments,result_message) {
 			if (result_message == "Success" && contact.friends){
 				loaded_contacts[contact.uid] = contact;
 			}
@@ -487,7 +561,7 @@ setTimeout( function() {
 			for (var uid in contact.friends) {
 				friends_details_left_to_load++;
 				var friend = {uid:Number(uid)};
-				load_friends_of_contact_recursive(friend,depth_of_friends_retrival - 1,function(loadedContact) {
+				load_friends_of_contact_recursive(friend,depth_of_friends_retrival - 1,function(friend) {
 					friends_details_left_to_load--;
 					if (friends_details_left_to_load == 0) {
 						callback(contact);
@@ -569,7 +643,7 @@ function clone_graph_without_node(graph, node_id) {
 								}
 								if (segment_1[0] == segment_2[segment_2.length - 1]) {
 									segment_2.pop();
-									graph = clone_graph_without_node(segment_1[0]);
+									graph = clone_graph_without_node(graph,segment_1[0]);
 									segments[segment_index_1] = segment_2.concat(segment_1);
 									segments.splice(segment_index_2,1);
 									segments_are_changed = true;
@@ -628,7 +702,7 @@ function clone_graph_without_node(graph, node_id) {
 				}
 			}
 			if (skip_group) {
-				continue;
+//				continue;
 			}
 			var renderer = function(r,node) {
 				var color = Raphael.getColor();
