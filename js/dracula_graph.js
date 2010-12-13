@@ -213,7 +213,13 @@ Graph.Renderer.Raphael.prototype = {
         }
         shape.attr({"fill-opacity": .6});
         /* reference to the node an element belongs to, needed for dragging all elements of a node */
-        shape.items.forEach(function(item){ item.set = shape; item.node.style.cursor = "move"; });
+        
+        for (var item_index = 0; item_index < shape.items.length; item_index++) {
+        	var item = shape.items[item_index];
+        	item.set = shape; 
+        	item.node.style.cursor = "move"; 
+        }
+//        shape.items.forEach(function(item){ item.set = shape; item.node.style.cursor = "move"; });
         shape.mousedown(this.dragger);
         node.shape = shape;
     },
