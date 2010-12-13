@@ -644,11 +644,38 @@ function clone_graph_without_node(graph, node_id) {
 		var unused_elements = get_substracted_array(uids, path);
 		return path.concat(unused_elements);
 	}
+
+	function add_contact_to_graph(graph,uid) {
+
+		var renderer = function(r,node) {
+			var color = Raphael.getColor();
+			var contact = loaded_contacts[node.id];
+
+			if (contact && loaded_contacts[node.id].photo) {
+				set = r.set().push(r.image(loaded_contacts[node.id].photo, node.point[0], node.point[1], 30, 30)
+						.attr({"href":get_contact_url(node.id),"target":"_top"})
+				);
+	            set.push(r.text(node.point[0] + 32, node.point[1] + 5, contact.first_name).attr({"text-anchor":"start"}));
+	            set.push(r.text(node.point[0] + 32, node.point[1] + 17, contact.last_name).attr({"text-anchor":"start"}));
+			}
+			else {
+				set = r.set().push(r.ellipse(node.point[0], node.point[1], 20, 15).attr({fill: color, stroke: color, "stroke-width": 2}));
+			}
+			return set;
+		};
+		
+		var app_user = loaded_contacts[get_app_user_uid()];
+		
+		var contact = loaded_contacts[uid];
+		var contact_label = contact && contact.first_name ? contact.first_name : uid;
+//		var contact_text_color = app_user.friends[uid] ? "#4cbf9c" : "#aaaaaa";
+		graph.addNode(uid,{render:renderer, label:contact_label});		
+	}
 	
 	function draw_social_graph(groups) {
 
 
-		var g = new Graph();
+		var graph = new Graph();
 		
 		var edges_counter = {};
 		var line_counter = 0;
@@ -665,20 +692,6 @@ function clone_graph_without_node(graph, node_id) {
 			if (skip_group) {
 //				continue;
 			}
-			var renderer = function(r,node) {
-				var color = Raphael.getColor();
-
-				if (loaded_contacts[node.id] && loaded_contacts[node.id].photo) {
-					set = r.set().push(r.image(loaded_contacts[node.id].photo, node.point[0], node.point[1], 30, 30)
-					//.attr("href",get_contact_url(node.id))
-					);
-				}
-				else {
-					set = r.set().push(r.ellipse(node.point[0], node.point[1], 20, 15).attr({fill: color, stroke: color, "stroke-width": 2}));
-				}
-                set.push(r.text(node.point[0], node.point[1] + 35, node.label || node.id).attr({fill:node.text_color}));
-				return set;
-			};
 			var path = find_path(edges_counter,group.uids);
 			for (var path_index=0;path_index<path.length;path_index++) {
 				var uid_1 = path[path_index];
@@ -687,15 +700,8 @@ function clone_graph_without_node(graph, node_id) {
 					swap_values(uid_1,uid_2);
 				}
 
-					var app_user = loaded_contacts[get_app_user_uid()];
-					var contact_1 = loaded_contacts[uid_1];
-					var contact_1_label = contact_1 && contact_1.first_name ? contact_1.first_name : uid_1;
-					var contact_1_text_color = app_user.friends[uid_1] ? "#4cbf9c" : "#aaaaaa";
-					g.addNode(uid_1,{render:renderer, label:contact_1_label, text_color:contact_1_text_color});
-					var contact_2 = loaded_contacts[uid_2];
-					var contact_2_label = contact_2 && contact_2.first_name ? contact_2.first_name : uid_2;
-					var contact_2_text_color = app_user.friends[uid_2] ? "#4cbf9c" : "#aaaaaa";
-					g.addNode(uid_2,{render:renderer,label:contact_2_label, text_color:contact_2_text_color});
+				add_contact_to_graph(graph,uid_1);
+				add_contact_to_graph(graph,uid_2);
 
 					if (edges_counter[[uid_1,uid_2]]) {
 						edges_counter[[uid_1,uid_2]].push(group_index);
@@ -708,17 +714,17 @@ function clone_graph_without_node(graph, node_id) {
 					var color_number = ((group_index%4 +1)*63 + (div(group_index,4)%4 + 1)*256*63 + (div(group_index,16)%4 + 1)*256*256*63);
 					var edge_counter = edges_counter[[uid_1,uid_2]];
 					var edge_label = new String(edge_counter);
-					g.addEdge(uid_1, uid_2,{ fill : "#" + color_number.toString(16) + "|" + new String(edge_counter.length*2 + 1), label:edge_counter});
+					graph.addEdge(uid_1, uid_2,{ fill : "#" + color_number.toString(16) + "|" + new String(edge_counter.length*2 + 1), label:edge_counter});
 			}
 		}
 		/* layout the graph using the Spring layout implementation */
-		var layouter = new Graph.Layout.Spring(g);
+		var layouter = new Graph.Layout.Spring(graph);
 		layouter.layout();
 		 
 		
-		g.edges.splice(0,g.edges.length);
+		graph.edges.splice(0,graph.edges.length);
 		/* draw the graph using the RaphaelJS draw implementation */
-		var renderer = new Graph.Renderer.Raphael('canvas', g, 606, 500);
+		var renderer = new Graph.Renderer.Raphael('canvas', graph, 606, 500);
 		renderer.draw();
 //		alert(line_counter);
 	}
