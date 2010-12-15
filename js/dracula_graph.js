@@ -127,38 +127,38 @@ Graph.Renderer.Raphael = function(element, graph, width, height) {
     /*
      * Dragging
      */
-//    this.isDrag = false;
-//    this.dragger = function (e) {
-//        this.dx = e.clientX;
-//        this.dy = e.clientY;
-//        selfRef.isDrag = this;
-////        this.set && this.set.animate({"fill-opacity": .1}, 200) && this.set.toFront();
-//        e.preventDefault && e.preventDefault();
-//    };
-//
-//    document.onmousemove = function (e) {
-//        e = e || window.event;
-//        if (selfRef.isDrag) {
-//            var bBox = selfRef.isDrag.set.getBBox();
-//            // TODO round the coordinates here (eg. for proper image representation)
-//            var newX = e.clientX - selfRef.isDrag.dx + (bBox.x + bBox.width / 2);
-//            var newY = e.clientY - selfRef.isDrag.dy + (bBox.y + bBox.height / 2);
-//            /* prevent shapes from being dragged out of the canvas */
-//            var clientX = e.clientX - (newX < 20 ? newX - 20 : newX > selfRef.width - 20 ? newX - selfRef.width + 20 : 0);
-//            var clientY = e.clientY - (newY < 20 ? newY - 20 : newY > selfRef.height - 20 ? newY - selfRef.height + 20 : 0);
-//            selfRef.isDrag.set.translate(clientX - selfRef.isDrag.dx, clientY - selfRef.isDrag.dy);
-//            for (var i in selfRef.graph.edges) {
-//                selfRef.graph.edges[i].connection && selfRef.graph.edges[i].connection.draw();
-//            }
-//            //selfRef.r.safari();
-//            selfRef.isDrag.dx = clientX;
-//            selfRef.isDrag.dy = clientY;
-//        }
-//    };
-//    document.onmouseup = function () {
-//        selfRef.isDrag && selfRef.isDrag.set.animate({"fill-opacity": .6}, 500);
-//        selfRef.isDrag = false;
-//    };
+    this.isDrag = false;
+    this.dragger = function (e) {
+        this.dx = e.clientX;
+        this.dy = e.clientY;
+        selfRef.isDrag = this;
+        this.set && this.set.animate({"fill-opacity": .1}, 200) && this.set.toFront();
+        e.preventDefault && e.preventDefault();
+    };
+
+    document.onmousemove = function (e) {
+        e = e || window.event;
+        if (selfRef.isDrag) {
+            var bBox = selfRef.isDrag.set.getBBox();
+            // TODO round the coordinates here (eg. for proper image representation)
+            var newX = e.clientX - selfRef.isDrag.dx + (bBox.x + bBox.width / 2);
+            var newY = e.clientY - selfRef.isDrag.dy + (bBox.y + bBox.height / 2);
+            /* prevent shapes from being dragged out of the canvas */
+            var clientX = e.clientX - (newX < 20 ? newX - 20 : newX > selfRef.width - 20 ? newX - selfRef.width + 20 : 0);
+            var clientY = e.clientY - (newY < 20 ? newY - 20 : newY > selfRef.height - 20 ? newY - selfRef.height + 20 : 0);
+            selfRef.isDrag.set.translate(clientX - selfRef.isDrag.dx, clientY - selfRef.isDrag.dy);
+            for (var i in selfRef.graph.edges) {
+                selfRef.graph.edges[i].connection && selfRef.graph.edges[i].connection.draw();
+            }
+            //selfRef.r.safari();
+            selfRef.isDrag.dx = clientX;
+            selfRef.isDrag.dy = clientY;
+        }
+    };
+    document.onmouseup = function () {
+        selfRef.isDrag && selfRef.isDrag.set.animate({"fill-opacity": .6}, 500);
+        selfRef.isDrag = false;
+    };
 };
 Graph.Renderer.Raphael.prototype = {
     translate: function(point) {
@@ -211,16 +211,16 @@ Graph.Renderer.Raphael.prototype = {
                 push(this.r.ellipse(point[0], point[1], 30, 20).attr({fill: color, stroke: color, "stroke-width": 2})).
                 push(this.r.text(point[0], point[1] + 30, node.label || node.id));
         }
-//        shape.attr({"fill-opacity": .6});
+        shape.attr({"fill-opacity": .6});
         /* reference to the node an element belongs to, needed for dragging all elements of a node */
         
         for (var item_index = 0; item_index < shape.items.length; item_index++) {
         	var item = shape.items[item_index];
         	item.set = shape; 
-//        	item.node.style.cursor = "move"; 
+               item.node.style.cursor = "move";
         }
 //        shape.items.forEach(function(item){ item.set = shape; item.node.style.cursor = "move"; });
-//        shape.mousedown(this.dragger);
+        shape.mousedown(this.dragger);
         node.shape = shape;
     },
     drawEdge: function(edge) {
@@ -238,9 +238,9 @@ Graph.Renderer.Raphael.prototype = {
 Graph.Layout = {};
 Graph.Layout.Spring = function(graph) {
                 this.graph = graph;
-                this.iterations = 5000;
-                this.maxRepulsiveForceDistance = 2;
-                this.k = 1.9;
+                this.iterations = 500;
+                this.maxRepulsiveForceDistance = 6;
+                this.k = 2;
                 this.c = 0.01;
                 this.maxVertexMovement = 0.5;
         };
