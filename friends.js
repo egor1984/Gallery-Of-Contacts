@@ -650,16 +650,30 @@ function clone_graph_without_node(graph, node_id) {
 		var renderer = function(r,node) {
 			var color = Raphael.getColor();
 			var contact = loaded_contacts[node.id];
-
+			
+			var set = r.set();
 			if (contact && loaded_contacts[node.id].photo) {
-				set = r.set().push(r.image(loaded_contacts[node.id].photo, node.point[0], node.point[1], 30, 30)
+				
+								
+				var image = r.rect(node.point[0], node.point[1], 50, 50, 5).attr({
+				    fill: "url(" + loaded_contacts[node.id].photo + ")",
+				    "stroke-width": 0,
+				    "stroke-opacity":"0"
+				});
+				set.push(image
 						.attr({"href":get_contact_url(node.id),"target":"_top"})
 				);
-	            set.push(r.text(node.point[0] + 32, node.point[1] + 5, contact.first_name).attr({"text-anchor":"start"}));
-	            set.push(r.text(node.point[0] + 32, node.point[1] + 17, contact.last_name).attr({"text-anchor":"start"}));
+				
+				image.node.onclick = function() {
+					parent.window.location = get_contact_url(node.id); 
+//ie workaround					
+//					window.open(get_contact_url(node.id));
+				}
+//	            set.push(r.text(node.point[0] + 15, node.point[1] + 41, contact.first_name).attr({"text-anchor":"middle"}));
+//	            set.push(r.text(node.point[0] + 15, node.point[1] + 51, contact.last_name).attr({"text-anchor":"middle"}));
 			}
 			else {
-				set = r.set().push(r.ellipse(node.point[0], node.point[1], 20, 15).attr({fill: color, stroke: color, "stroke-width": 2}));
+				set.push(r.ellipse(node.point[0], node.point[1], 20, 15).attr({fill: color, stroke: color, "stroke-width": 2}));
 			}
 			return set;
 		};
