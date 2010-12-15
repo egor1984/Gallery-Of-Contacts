@@ -483,12 +483,26 @@ setTimeout( function() {
 
 	loaded_contacts[userContact.uid] = userContact;
 
-	load_friends_of_contact_recursive(userContact, 0,function(contact) {
+	
+	var result_string = getUrlParameter(window.location.href, "api_result");
+	var result = JSON.parse(unescape(result_string));
+	if (!result.response) {
+		if (result.error) {
+			alert(data.error.error_msg);
+			return;
+		}
+	}
+	userContact.friends = {};
+	for (var uid_index=0;uid_index<result.response.length;uid_index++) {
+		userContact.friends[result.response[uid_index]]=true;
+	}
+//	load_friends_of_contact_recursive(userContact, 0,function(contact) {
+		
 		var friends_left_to_process = 0;
-		for (var uid in contact.friends) {
+		for (var uid in userContact.friends) {
 			friends_left_to_process++;
 			var friend = {uid:Number(uid)};
-			mutual_friends_loader.load({contact_1:contact,contact_2:friend},function(arguments,result_message) {
+			mutual_friends_loader.load({contact_1:userContact,contact_2:friend},function(arguments,result_message) {
 				if (result_message == "Success" 
 					&& arguments.contact_2.mutual_friends 
 					&& arguments.contact_2.mutual_friends[arguments.contact_1.uid]){
@@ -496,13 +510,13 @@ setTimeout( function() {
 				}
 				friends_left_to_process--;
 				if (friends_left_to_process == 0) {
-					process_output(contact);									
+					process_output(userContact);									
 
 					
 				}				
 			});
 		}
-	});
+//	});
 	
 
 }, 1000);
