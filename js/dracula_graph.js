@@ -132,7 +132,7 @@ Graph.Renderer.Raphael = function(element, graph, width, height) {
         this.dx = e.clientX;
         this.dy = e.clientY;
         selfRef.isDrag = this;
-        this.set && this.set.animate({"fill-opacity": .1}, 200) && this.set.toFront();
+//        this.set && this.set.animate({"fill-opacity": .1}, 200) && this.set.toFront();
         e.preventDefault && e.preventDefault();
     };
 
@@ -156,7 +156,7 @@ Graph.Renderer.Raphael = function(element, graph, width, height) {
         }
     };
     document.onmouseup = function () {
-        selfRef.isDrag && selfRef.isDrag.set.animate({"fill-opacity": .6}, 500);
+ //       selfRef.isDrag && selfRef.isDrag.set.animate({"fill-opacity": .6}, 500);
         selfRef.isDrag = false;
     };
 };
@@ -211,7 +211,7 @@ Graph.Renderer.Raphael.prototype = {
                 push(this.r.ellipse(point[0], point[1], 30, 20).attr({fill: color, stroke: color, "stroke-width": 2})).
                 push(this.r.text(point[0], point[1] + 30, node.label || node.id));
         }
-        shape.attr({"fill-opacity": .6});
+//        shape.attr({"fill-opacity": .6});
         /* reference to the node an element belongs to, needed for dragging all elements of a node */
         
         for (var item_index = 0; item_index < shape.items.length; item_index++) {

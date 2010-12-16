@@ -659,6 +659,68 @@ function clone_graph_without_node(graph, node_id) {
 		return path.concat(unused_elements);
 	}
 
+	
+	function scale_vector(vector, new_length) {
+		var arg = new_length/Math.sqrt(vector[0]*vector[0] + vector[1]*vector[1]);
+		var sx = vector[0]*arg;
+		var sy = vector[1]*arg;
+		return [sx, sy];		
+	}
+	
+	
+	function calculate_radius(angle, delta) {
+		var length = Math.sqrt(delta[0]*delta[0] + delta[1]*delta[1]);
+		switch (angle)
+		{
+		case 120:
+			return length;
+		case 150:
+			return length/Math.sqrt(2 - Math.sqrt(3));
+		default:
+			throw "not supported angle";
+		}		
+	}
+	
+	function create_path_of_object(start_point, points, invert_axis_of_object,rf) {
+		var path = "M " + start_point[0] + " " + start_point[1];
+		var angle = 0;
+		for (var point_index = 0; point_index < points.length; point_index++) {
+			var previous_delta = points[(points.length+point_index - 1)%points.length];			
+			var delta = points[point_index];
+			
+			var distance_from_corner = 6;
+			var previous_scaled_delta = scale_vector(previous_delta, distance_from_corner);
+			var scaled_delta = scale_vector(delta, distance_from_corner);
+			var index_of_x_axis = invert_axis_of_object ? 1 : 0;
+			var index_of_y_axis = invert_axis_of_object ? 0 : 1;
+			
+			var ellipse_destination = [previous_scaled_delta[index_of_x_axis]
+			                           + scaled_delta[index_of_x_axis]
+			                           ,previous_scaled_delta[index_of_y_axis]
+			                           +scaled_delta[index_of_y_axis]];
+
+			var radius = calculate_radius(delta[2], ellipse_destination); 
+				
+			var angle = 0;
+			
+			path += " a " + radius + "," + radius
+					+ " " + angle + " 0," + (invert_axis_of_object ? 0 : 1) + " "
+				+ ellipse_destination[0] + "," + ellipse_destination[1];
+					
+			
+//			path += " l " + previous_point[invert_axis_of_object ? 1 : 0]*rf + " "
+//						  + previous_point[invert_axis_of_object ? 0 : 1]*rf;
+//			path += " l " + point[invert_axis_of_object ? 1 : 0]*rf + " "
+//			  + point[invert_axis_of_object ? 0 : 1]*rf;
+
+
+path += " l " + (delta[index_of_x_axis] - 2*scaled_delta[index_of_x_axis]) + " "
+			  + (delta[index_of_y_axis] - 2*scaled_delta[index_of_y_axis]);
+		}
+		return path + " z";
+		
+	}
+	
 	function add_contact_to_graph(graph,uid) {
 
 		var renderer = function(r,node) {
@@ -668,21 +730,39 @@ function clone_graph_without_node(graph, node_id) {
 			var set = r.set();
 			if (contact && loaded_contacts[node.id].photo) {
 				
-								
-				var image = r.rect(node.point[0], node.point[1], 50, 50, 5).attr({
+				var sqrt3 = Math.sqrt(3);
+				var k = 50/sqrt3;
+				var rf = 1/10;
+
+				var points = [[k*(3/2 - sqrt3/2), -k*(sqrt3 - 1)/2,120]
+							 ,[k*(2*sqrt3 - 3), 0,150]
+							 ,[k*(3/2 - sqrt3/2), k*(sqrt3 - 1)/2,150]
+							,[0,k,120]
+							,[-k*(3/2 - sqrt3/2), k*(sqrt3 - 1)/2,120]
+							,[-k*(2*sqrt3 - 3),0,150]
+							,[-k*(3/2 - sqrt3/2),-k*(sqrt3 - 1)/2,150]
+							,[0,-k,120]];
+				
+				var path_string = create_path_of_object([node.point[0],node.point[1]], points, false,rf);
+				var image = r.path(path_string);
+				
+				
+				
+//				var image = r.rect(node.point[0], node.point[1], 50, 50, 5);
+				image.attr({
 				    fill: "url(" + loaded_contacts[node.id].photo + ")",
 				    "stroke-width": 0,
 				    "stroke-opacity":"0"
 				});
 				set.push(image
-						.attr({"href":get_contact_url(node.id),"target":"_top"})
+//						.attr({"href":get_contact_url(node.id),"target":"_top"})
 				);
 				
-				image.node.onclick = function() {
-					parent.window.location = get_contact_url(node.id); 
+//				image.node.onclick = function() {
+//					parent.window.location = get_contact_url(node.id); 
 //ie workaround					
 //					window.open(get_contact_url(node.id));
-				}
+//				}
 //	            set.push(r.text(node.point[0] + 15, node.point[1] + 41, contact.first_name).attr({"text-anchor":"middle"}));
 //	            set.push(r.text(node.point[0] + 15, node.point[1] + 51, contact.last_name).attr({"text-anchor":"middle"}));
 			}
@@ -742,7 +822,9 @@ function clone_graph_without_node(graph, node_id) {
 					var color_number = ((group_index%4 +1)*63 + (div(group_index,4)%4 + 1)*256*63 + (div(group_index,16)%4 + 1)*256*256*63);
 					var edge_counter = edges_counter[[uid_1,uid_2]];
 					var edge_label = new String(edge_counter);
-					graph.addEdge(uid_1, uid_2,{ fill : "#" + color_number.toString(16) + "|" + new String(edge_counter.length*2 + 1), label:edge_counter});
+					graph.addEdge(uid_1, uid_2,{ fill : "#" + color_number.toString(16) + "|" + new String(edge_counter.length*2 + 1)
+//					, label:edge_counter
+					});
 			}
 		}
 		/* layout the graph using the Spring layout implementation */
@@ -750,7 +832,7 @@ function clone_graph_without_node(graph, node_id) {
 		layouter.layout();
 		 
 		
-		graph.edges.splice(0,graph.edges.length);
+//		graph.edges.splice(0,graph.edges.length);
 		/* draw the graph using the RaphaelJS draw implementation */
 		var renderer = new Graph.Renderer.Raphael('canvas', graph, 606, 500);
 		renderer.draw();
