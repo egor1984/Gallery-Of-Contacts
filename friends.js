@@ -666,6 +666,10 @@ function clone_graph_without_node(graph, node_id) {
 		var sy = vector[1]*arg;
 		return [sx, sy];		
 	}
+
+	function calculate_vector(angle, length) {
+		return [Math.cos(angle)*length,Math.sin(angle)*length];
+	}
 	
 	
 	function calculate_radius(angle, delta) {
@@ -731,16 +735,25 @@ path += " l " + (delta[index_of_x_axis] - 2*scaled_delta[index_of_x_axis]) + " "
 			if (contact && loaded_contacts[node.id].photo) {
 				
 				var sqrt3 = Math.sqrt(3);
-				var k = 50/sqrt3;
+//				var k = 51/sqrt3;
 
-				var points = [[k*(3/2 - sqrt3/2), -k*(sqrt3 - 1)/2,120]
-							 ,[k*(2*sqrt3 - 3), 0,150]
-							 ,[k*(3/2 - sqrt3/2), k*(sqrt3 - 1)/2,150]
-							,[0,k,120]
-							,[-k*(3/2 - sqrt3/2), k*(sqrt3 - 1)/2,120]
-							,[-k*(2*sqrt3 - 3),0,150]
-							,[-k*(3/2 - sqrt3/2),-k*(sqrt3 - 1)/2,150]
-							,[0,-k,120]];
+				var points = [];
+				for (var side_index = 0;side_index <6; side_index++) {
+					var angle = (Math.PI/12 + side_index*Math.PI/3 );
+					var delta = calculate_vector(angle,51.5/Math.sqrt(2 + Math.sqrt(3)));
+					delta.push(120);
+					points.push(delta);
+				}
+				
+				
+//				var points = [[k*(3/2 - sqrt3/2), -k*(sqrt3 - 1)/2,120]
+//							 ,[k*(2*sqrt3 - 3), 0,150]
+//							 ,[k*(3/2 - sqrt3/2), k*(sqrt3 - 1)/2,150]
+//							,[0,k,120]
+//							,[-k*(3/2 - sqrt3/2), k*(sqrt3 - 1)/2,120]
+//							,[-k*(2*sqrt3 - 3),0,150]
+//							,[-k*(3/2 - sqrt3/2),-k*(sqrt3 - 1)/2,150]
+//							,[0,-k,120]];
 				
 				var path_string = create_path_of_object([node.point[0],node.point[1]], points, true);
 				var image = r.path(path_string);
