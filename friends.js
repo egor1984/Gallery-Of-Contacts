@@ -681,14 +681,14 @@ function clone_graph_without_node(graph, node_id) {
 		}		
 	}
 	
-	function create_path_of_object(start_point, points, invert_axis_of_object,rf) {
+	function create_path_of_object(start_point, points, invert_axis_of_object) {
 		var path = "M " + start_point[0] + " " + start_point[1];
 		var angle = 0;
 		for (var point_index = 0; point_index < points.length; point_index++) {
 			var previous_delta = points[(points.length+point_index - 1)%points.length];			
 			var delta = points[point_index];
 			
-			var distance_from_corner = 6;
+			var distance_from_corner = 4;
 			var previous_scaled_delta = scale_vector(previous_delta, distance_from_corner);
 			var scaled_delta = scale_vector(delta, distance_from_corner);
 			var index_of_x_axis = invert_axis_of_object ? 1 : 0;
@@ -732,7 +732,6 @@ path += " l " + (delta[index_of_x_axis] - 2*scaled_delta[index_of_x_axis]) + " "
 				
 				var sqrt3 = Math.sqrt(3);
 				var k = 50/sqrt3;
-				var rf = 1/10;
 
 				var points = [[k*(3/2 - sqrt3/2), -k*(sqrt3 - 1)/2,120]
 							 ,[k*(2*sqrt3 - 3), 0,150]
@@ -743,7 +742,7 @@ path += " l " + (delta[index_of_x_axis] - 2*scaled_delta[index_of_x_axis]) + " "
 							,[-k*(3/2 - sqrt3/2),-k*(sqrt3 - 1)/2,150]
 							,[0,-k,120]];
 				
-				var path_string = create_path_of_object([node.point[0],node.point[1]], points, false,rf);
+				var path_string = create_path_of_object([node.point[0],node.point[1]], points, true);
 				var image = r.path(path_string);
 				
 				
