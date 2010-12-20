@@ -295,7 +295,7 @@ function find_triples(user) {
 			for (var i = 0; i < mutual_friends.length; i++) {
 				var triple = new Array();
 				triple.push(user.uid);
-				triple.push(uid_of_friend_of_user);
+				triple.push(Number(uid_of_friend_of_user));
 				triple.push(mutual_friends[i]);
 				triple.sort(function(uid_1,uid_2) { return uid_1 - uid_2;});				
 
