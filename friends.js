@@ -124,13 +124,16 @@ function is_friends( contact1, contact2) {
 
 
 
-function uids_are_friends( uid1, uid2) {
+function uids_are_friends(user, uid1, uid2) {
 // Contacts can hide their friends information, so we will check both of them
-	var contact1 = loaded_contacts[uid1];
-	var contact2 = loaded_contacts[uid2];
+//	var contact1 = loaded_contacts[uid1];
+//	var contact2 = loaded_contacts[uid2];
 
-	return (contact1 && contact1.friends && contact1.friends[uid2])
-			|| (contact2 && contact2.friends && contact2.friends[uid1]);
+	return user.mutual_friends[uid1] && user.mutual_friends[uid1].indexOf(uid2) != -1
+			|| user.mutual_friends[uid2] && user.mutual_friends[uid2].indexOf(uid1) != -1;
+	
+//	return (contact1 && contact1.friends && contact1.friends[uid2])
+//			|| (contact2 && contact2.friends && contact2.friends[uid1]);
 }
 
 
@@ -204,14 +207,14 @@ function concat_members_names(members) {
 	}
 	return group_name;
 }
-function merge_to_next_size(groups){
+function merge_to_next_size(user,groups){
 	var groups_of_next_size = {};
 	for (var index1=0;index1<groups.length;index1++){
 		var group1 = groups[index1];
 		for (var index2=index1+1;index2<groups.length;index2++){
 			var group2 = groups[index2];
 			var distinct_values = find_distinct_values(group1.uids,group2.uids);
-			if (distinct_values.length==2 && uids_are_friends(distinct_values[0],distinct_values[1])){
+			if (distinct_values.length==2 && uids_are_friends(user,distinct_values[0],distinct_values[1])){
 				group1.used_in_merged = true;
 				group2.used_in_merged = true;
 				var uids = merge_unique(group1.uids,group2.uids);
@@ -243,10 +246,10 @@ function index_of_same_group(groups,group_1) {
 		});
 }
 	
-function merge_groups(group_size_begin,group_size_end,groups_for_merge) {
+function merge_groups(user,group_size_begin,group_size_end,groups_for_merge) {
 	var all_merged_groups = new Array();
 	for (var i=group_size_begin;i<=group_size_end;i++) {
-		var tmp_groups_for_merge = merge_to_next_size(groups_for_merge);
+		var tmp_groups_for_merge = merge_to_next_size(user,groups_for_merge);
 		for (var j = 0; j < groups_for_merge.length;j++) {
 			if (!groups_for_merge[j].used_in_merged) {
 				all_merged_groups.push(groups_for_merge[j]);
@@ -436,7 +439,7 @@ function process_output(user) {
 */
 	if (user.mutual_friends) {
 		var groups_3 = find_triples(user);
-		var groups = merge_groups(4,11,groups_3);
+		var groups = merge_groups(user, 4,11,groups_3);
 		
 		var uids = get_distinct_uids(groups);
 		var profiles_left_to_load = 0;
