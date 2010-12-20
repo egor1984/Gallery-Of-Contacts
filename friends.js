@@ -114,12 +114,13 @@ function indexOf(arr, pred) {
 	return index;
 }
 
+/*
 function is_friends( contact1, contact2) {
 // Contacts can hide their friends information, so we will check both of them
 	return (contact1.friends && contact1.friends[contact2.uid])
 			|| (contact2.friends && contact2.friends[contact1.uid]);
 }
-
+*/
 
 
 
