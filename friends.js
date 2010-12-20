@@ -580,7 +580,38 @@ function clone_graph_without_node(graph, node_id) {
 		}
 	}
 	
-	function find_path_with_minimum_new_connections(graph) {
+	function merge_segments_with_same_uid_at_tip(segments,graph) {
+		for (var segment_index_1 = 0; segment_index_1 < segments.length;segment_index_1++) {
+			var segment_1 = segments[segment_index_1];
+			if (segment_1[0] == segment_1[segment_1.length - 1]) {
+				segment_1.pop();
+				return {segments_are_changed:true,graph:graph};
+			}
+			for (var segment_index_2 = 0; segment_index_2 < segments.length;segment_index_2++) {
+				if (segment_index_2 != segment_index_1) {
+					var segment_2 = segments[segment_index_2];
+					if (segment_1[segment_1.length - 1] == segment_2[0]
+						|| segment_1[segment_1.length - 1] == segment_2[segment_2.length - 1]) {
+						segment_1.reverse();
+					}
+					if (segment_2[0] == segment_1[0]) {
+						segment_2.reverse();
+					}
+					if (segment_1[0] == segment_2[segment_2.length - 1]) {
+						segment_2.pop();
+						var new_graph = clone_graph_without_node(graph,segment_1[0]);
+						segments[segment_index_1] = segment_2.concat(segment_1);
+						segments.splice(segment_index_2,1);
+						return {segments_are_changed:true,graph:new_graph};
+					}
+				}
+			}
+		}
+		return {segments_are_changed:false,graph:graph};
+	}
+	
+	function find_path_with_minimum_new_connections(edges_counter,uids) {
+		var graph = form_graph_of_uids_connections(edges_counter,uids);
 		var segments = [];
 		
 		while (true) {
@@ -601,39 +632,10 @@ function clone_graph_without_node(graph, node_id) {
 				graph[id_2].connections.splice(graph[id_2].connections.indexOf(id_1),1);
 				segments.push([id_1,id_2]);
 				do {
-					var segments_are_changed = false;
-					for (var segment_index_1 = 0; segment_index_1 < segments.length;segment_index_1++) {
-						var segment_1 = segments[segment_index_1];
-						if (segment_1[0] == segment_1[segment_1.length - 1]) {
-							segment_1.pop();
-							segments_are_changed = true;
-							break;
-						}
-						for (var segment_index_2 = 0; segment_index_2 < segments.length;segment_index_2++) {
-							if (segment_index_2 != segment_index_1) {
-								var segment_2 = segments[segment_index_2];
-								if (segment_1[segment_1.length - 1] == segment_2[0]
-									|| segment_1[segment_1.length - 1] == segment_2[segment_2.length - 1]) {
-									segment_1.reverse();
-								}
-								if (segment_2[0] == segment_1[0]) {
-									segment_2.reverse();
-								}
-								if (segment_1[0] == segment_2[segment_2.length - 1]) {
-									segment_2.pop();
-									graph = clone_graph_without_node(graph,segment_1[0]);
-									segments[segment_index_1] = segment_2.concat(segment_1);
-									segments.splice(segment_index_2,1);
-									segments_are_changed = true;
-									break;
-								}
-							}
-						}
-						if (segments_are_changed) {
-							break;
-						}
-					}		
-				} while (segments_are_changed);
+					 
+					var result = merge_segments_with_same_uid_at_tip(segments,graph);
+					var graph = result.graph;
+				} while (result.segments_are_changed);
 			} else {
 				graph = clone_graph_without_node(graph, id_1);
 			}
@@ -645,7 +647,7 @@ function clone_graph_without_node(graph, node_id) {
 		return result;
 	}
 	
-	function find_path(edges_counter,uids) {
+	function form_graph_of_uids_connections(edges_counter,uids) {
 		var existing_segments = {};
 		for (var uid_index = 0;uid_index < uids.length; uid_index++) {
 			var uid_1 = uids[uid_index];
@@ -658,7 +660,13 @@ function clone_graph_without_node(graph, node_id) {
 			}
 			existing_segments[uid_1] = {connections : connections};
 		}
-		var path = find_path_with_minimum_new_connections(existing_segments);
+		return existing_segments;
+	}
+	
+	
+	
+	function find_path(edges_counter,uids) {
+		var path = find_path_with_minimum_new_connections(edges_counter,uids);
 		var unused_elements = get_substracted_array(uids, path);
 		return path.concat(unused_elements);
 	}
