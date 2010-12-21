@@ -851,7 +851,9 @@ path += " l " + (delta[index_of_x_axis] - 2*scaled_delta[index_of_x_axis]) + " "
 				var uid_1 = path[path_index];
 				var uid_2 = path[(path_index + 1)%path.length];
 				if (uid_1 > uid_2) {
-					swap_values(uid_1,uid_2);
+					var tmp = uid_1;
+					uid_1 = uid_2;
+					uid_2 = tmp;
 				}
 
 				add_contact_to_graph(graph,uid_1);

@@ -1,8 +1,3 @@
-function swap_values(lh,rh) {
-	var tmp = lh;
-	lh = rh;
-	rh = tmp;
-}
 
 var MAX_DUMP_DEPTH = 3;
 
