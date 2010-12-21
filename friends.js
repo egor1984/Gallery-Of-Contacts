@@ -767,6 +767,17 @@ path += " l " + (delta[index_of_x_axis] - 2*scaled_delta[index_of_x_axis]) + " "
 		
 	}
 	
+	function calculate_deltas_of_hexagon() {
+		var deltas = [];
+		for (var side_index = 0;side_index <6; side_index++) {
+			var angle = (Math.PI/12 + side_index*Math.PI/3 );
+			var delta = calculate_vector(angle,51.5/Math.sqrt(2 + Math.sqrt(3)));
+			delta.push(120);
+			deltas.push(delta);
+		}
+		return deltas;
+	}
+	
 	function add_contact_to_graph(graph,uid) {
 
 		var renderer = function(r,node) {
@@ -779,13 +790,7 @@ path += " l " + (delta[index_of_x_axis] - 2*scaled_delta[index_of_x_axis]) + " "
 				var sqrt3 = Math.sqrt(3);
 //				var k = 51/sqrt3;
 
-				var points = [];
-				for (var side_index = 0;side_index <6; side_index++) {
-					var angle = (Math.PI/12 + side_index*Math.PI/3 );
-					var delta = calculate_vector(angle,51.5/Math.sqrt(2 + Math.sqrt(3)));
-					delta.push(120);
-					points.push(delta);
-				}
+				var deltas = calculate_deltas_of_hexagon();
 				
 				
 //				var points = [[k*(3/2 - sqrt3/2), -k*(sqrt3 - 1)/2,120]
@@ -797,7 +802,7 @@ path += " l " + (delta[index_of_x_axis] - 2*scaled_delta[index_of_x_axis]) + " "
 //							,[-k*(3/2 - sqrt3/2),-k*(sqrt3 - 1)/2,150]
 //							,[0,-k,120]];
 				
-				var path_string = create_path_of_object([node.point[0],node.point[1]], points, true);
+				var path_string = create_path_of_object([node.point[0],node.point[1]], deltas, true);
 				var image = r.path(path_string);
 				
 				
