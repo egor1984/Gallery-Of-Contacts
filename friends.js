@@ -667,8 +667,15 @@ function clone_graph_without_node(graph, node_id) {
 	
 	function find_path(edges_counter,uids) {
 		var path = find_path_with_minimum_new_connections(edges_counter,uids);
-		var unused_elements = get_substracted_array(uids, path);
-		return path.concat(unused_elements);
+		var elements_not_in_path = get_substracted_array(uids, path);
+		
+		return path.concat(elements_not_in_path);
+//		if (path.length > 0) {
+//			var pa = elements_not_in_path.concat(path[0],path[path.length - 1]);
+//			
+//		} else {
+//			return path.concat(elements_not_in_path);
+//		}
 	}
 
 	
@@ -812,18 +819,10 @@ path += " l " + (delta[index_of_x_axis] - 2*scaled_delta[index_of_x_axis]) + " "
 		var edges_counter = {};
 		var line_counter = 0;
 		
+		
+		
 		for (var group_index = 0; group_index < groups.length;group_index++) {			
 			var group = groups[group_index];
-			var skip_group = true;
-			for (var uid_index = 0;uid_index < group.uids.length;uid_index++) {
-				if (group.uids[uid_index] == get_app_user_uid()) {
-					group.uids.splice(uid_index,1);
-					skip_group = false;
-				}
-			}
-			if (skip_group) {
-//				continue;
-			}
 			var path = find_path(edges_counter,group.uids);
 			for (var path_index=0;path_index<path.length;path_index++) {
 				var uid_1 = path[path_index];
@@ -864,8 +863,20 @@ path += " l " + (delta[index_of_x_axis] - 2*scaled_delta[index_of_x_axis]) + " "
 	}
 	
 	function refreshGroupList(groups) {
-	
-		draw_social_graph(groups);
+
+		var groups_to_draw = [];
+		for (var group_index = 0; group_index < groups.length;group_index++) {			
+			var group = groups[group_index];
+			var index_of_user_uid = group.uids.indexOf(get_app_user_uid()); 
+			if (index_of_user_uid != -1) {
+				var group_to_draw = new Object({uids:group.uids.concat()
+					,used_in_merged:group.used_in_merged});
+//				group_to_draw.uids.splice(index_of_user_uid,1);
+				groups_to_draw.push(group_to_draw);
+			}
+		}
+		
+		draw_social_graph(groups_to_draw);
 		
 		
 	}
