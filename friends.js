@@ -323,6 +323,24 @@ function get_distinct_uids(groups){
 	return uids;
 }
 
+function get_intersected_array(array_1,array_2) {
+	
+	var array_1_as_object = {};
+	for (var element_index = 0; element_index < array_1.length;element_index++) {
+		array_1_as_object[array_1[element_index]] = true;
+	}
+	
+	var result = [];
+	
+	for (var element_index=0;element_index<array_2.length;element_index++) {
+		var element = array_2[element_index];
+		if (array_1_as_object[element]) {
+			result.push(element);
+		}
+	}
+	return result;
+}
+
 
 function get_substracted_array(substractable,substraction) {
 	
@@ -583,6 +601,8 @@ function clone_graph_without_node(graph, node_id) {
 	function merge_segments_with_same_uid_at_tip(segments,graph) {
 		for (var segment_index_1 = 0; segment_index_1 < segments.length;segment_index_1++) {
 			var segment_1 = segments[segment_index_1];
+
+//algorithm may be improved by different handling of segments with same uids on tips
 			if (segment_1[0] == segment_1[segment_1.length - 1]) {
 				segment_1.pop();
 				return {segments_are_changed:true,graph:graph};
@@ -640,6 +660,8 @@ function clone_graph_without_node(graph, node_id) {
 				graph = clone_graph_without_node(graph, id_1);
 			}
 		}
+
+//algorithm may be improved by different merging of segments		
 		var result = [];
 		for (var segment_index = 0;segment_index < segments.length;segment_index++) {
 			result = result.concat(segments[segment_index]);
@@ -665,17 +687,18 @@ function clone_graph_without_node(graph, node_id) {
 	
 	
 	
-	function find_path(edges_counter,uids) {
+	function find_path(groups,edges_counter,uids) {
 		var path = find_path_with_minimum_new_connections(edges_counter,uids);
-		var elements_not_in_path = get_substracted_array(uids, path);
 		
-		return path.concat(elements_not_in_path);
-//		if (path.length > 0) {
-//			var pa = elements_not_in_path.concat(path[0],path[path.length - 1]);
-//			
-//		} else {
-//			return path.concat(elements_not_in_path);
-//		}
+//algorithm may be improved by checking groups in various order		
+		for (var group_index = 0; group_index <groups.length;group_index++) {
+			var group = groups[group_index];
+			var elements_not_in_path = get_substracted_array(uids,path);
+			var addition_to_path = get_intersected_array(elements_not_in_path,group.uids);
+			path = path.concat(addition_to_path);
+		}
+		return path;
+		
 	}
 
 	
@@ -823,7 +846,7 @@ path += " l " + (delta[index_of_x_axis] - 2*scaled_delta[index_of_x_axis]) + " "
 		
 		for (var group_index = 0; group_index < groups.length;group_index++) {			
 			var group = groups[group_index];
-			var path = find_path(edges_counter,group.uids);
+			var path = find_path(groups,edges_counter,group.uids);
 			for (var path_index=0;path_index<path.length;path_index++) {
 				var uid_1 = path[path_index];
 				var uid_2 = path[(path_index + 1)%path.length];
