@@ -464,7 +464,7 @@ function process_output(user) {
 		
 		var uids = get_distinct_uids(groups);
 		var profiles_left_to_load = 0;
-		for (var uid in uids){
+		for (var uid in user.friends){
 			if (!loaded_contacts[uid]) {
 				loaded_contacts[uid] = {uid:uid};
 			}
@@ -474,7 +474,8 @@ function process_output(user) {
 				profile_loader.load({contact:contact,fields:"uid,first_name,photo"}, function(arguments,result_message){
 					profiles_left_to_load--;
 					if (profiles_left_to_load == 0) {
-						refreshGroupList(groups);
+						draw_grid_of_friends(user);
+//						refreshGroupList(groups);
 					}
 				});
 			}
@@ -483,7 +484,76 @@ function process_output(user) {
 	}
 }
 
+function get_value_in_grid(grid, index) {
+	if (grid[index[0]]) {
+		return grid[index[0]][index[1]];		
+	}
+	else {
+		return undefined;
+	}
+}
 
+function set_value_in_grid(grid,index,value) {
+	if (!grid[index[0]]) {
+		grid[index[0]] = [];
+	}
+	grid[index[0]][index[1]] = value;	
+}
+
+function for_each_index_in_grid(grid,callback) {
+	for (var grid_index_x in grid) {
+		for (var grid_index_y in grid[grid_index_x]) {
+			callback([Number(grid_index_x),Number(grid_index_y)]);
+		}
+	}
+}
+
+function find_index_for_uid(grid, friend_uid,indexes_of_placed_friends) {
+	if (indexes_of_placed_friends.length != 0) {
+		var middle_index = get_middle_index(indexes_of_placed_friends);
+		return get_nearest_free_index(grid,middle_index);
+	} 
+	else {
+		return get_index_in_free_area(grid, 2);	
+	}
+}
+
+function draw_grid_of_friends(user) {
+	var grid_of_friends = {};
+	
+	for (var friend_uid_string in user.friends) {
+		var friend_uid = Number(friend_uid_string);
+		var mutual_friends = user.mutual_friends[friend_uid_string];
+		var indexes_of_placed_friends = [];
+		if (mutual_friends) {		
+			for_each_index_in_grid(grid_of_friends, function(grid_index) {
+				var uid_of_friend_in_grid = get_value_in_grid(grid_of_friends,grid_index);
+				if (mutual_friends.indexOf(uid_of_friend_in_grid) != -1) {
+					indexes_of_placed_friends.push(grid_index);
+				}			
+			});
+		}
+		
+		var index_of_friend = find_index_for_uid(grid_of_friends,friend_uid,indexes_of_placed_friends); 
+		set_value_in_grid(grid_of_friends,index_of_friend, friend_uid);
+	}
+
+	var graph = new Graph();
+	for_each_index_in_grid(grid_of_friends, function(grid_index) {
+		var uid = get_value_in_grid(grid_of_friends,grid_index);
+		var coordinate = get_coordinate(grid_index);
+		add_contact_to_graph(graph,uid,coordinate);				
+	});
+	
+	var bounds = find_bounding_indexes(grid_of_friends);
+	graph.layoutMinX = bounds[0][0];
+	graph.layoutMinY = bounds[0][1];
+	graph.layoutMaxX = bounds[1][0];
+	graph.layoutMaxY = bounds[1][1];
+	
+	var renderer = new Graph.Renderer.Raphael('canvas', graph, 606, 500);
+	renderer.draw();
+}
 
 
 
@@ -705,6 +775,95 @@ function clone_graph_without_node(graph, node_id) {
 	}
 
 	
+	function find_bounding_indexes(grid) {
+		var lower_bound = [Number.POSITIVE_INFINITY,Number.POSITIVE_INFINITY]; 
+		var upper_bound = [Number.NEGATIVE_INFINITY,Number.NEGATIVE_INFINITY];
+		for_each_index_in_grid(grid,function(grid_index) {
+			if (lower_bound[0] > grid_index[0]) {
+				lower_bound[0] = grid_index[0];
+			}
+			if (lower_bound[1] > grid_index[1]) {
+				lower_bound[1] = grid_index[1];
+			}
+			if (upper_bound[0] < grid_index[0]) {
+				upper_bound[0] = grid_index[0];
+			}
+			if (upper_bound[1] < grid_index[1]) {
+				upper_bound[1] = grid_index[1];
+			}			
+		});
+		return [lower_bound,upper_bound];
+	}
+	
+	function get_index_in_free_area(grid,range) {
+		var bounds = find_bounding_indexes(grid);
+		var lower_bound = bounds[0];
+		var upper_bound = bounds[1];
+		var bounds_size = [upper_bound[0] - lower_bound[0], upper_bound[1] - lower_bound[1]];
+		if (bounds_size[0] < 0
+			&& bounds_size[1] < 0) {
+			return [0,0];
+		}
+		if (bounds_size[0] < bounds_size[1]) {
+			return [Math.round(upper_bound[0] + range), Math.round(lower_bound[1] + bounds_size[1]/2)];
+		} 
+		else {
+			return [Math.round(lower_bound[0] + bounds_size[0]/2),Math.round(upper_bound[1] + range)];
+		}
+	}
+	
+	function get_nearest_free_index(grid,index) {
+		
+		var r = 1;
+		if (!get_value_in_grid(grid,index)) {
+			return index;
+		}
+		var coordinate = get_coordinate(index);
+		while (true) {
+			coordinate = [coordinate[0] + 1,coordinate[1]];
+			var deltas = calculate_deltas_of_hexagon(1,Math.PI*2/3);
+			for (var delta_index = 0; delta_index < deltas.length; delta_index++) {
+				var delta = deltas[delta_index];
+				for (var i = 0; i < r; i++) {
+					coordinate = [coordinate[0] + delta[0],coordinate[1] + delta[1]];
+					var neighbor_index = get_index(coordinate);
+					if (!get_value_in_grid(grid,neighbor_index)) {
+						return neighbor_index;
+					}
+				}
+			}
+			r++;
+			
+		}
+		return index;
+		
+	}
+	
+	function get_middle_index(indexes) {
+		var accumulator = [0,0];
+		for (var index_of_index = 0; index_of_index < indexes.length; index_of_index++) {
+			var coordinate = get_coordinate(indexes[index_of_index]);
+			accumulator[0]+=coordinate[0];
+			accumulator[1]+=coordinate[1];			
+		}
+		
+		var middle_coordinate = [accumulator[0]/indexes.length,accumulator[1]/indexes.length];
+		
+		return get_index(middle_coordinate);
+	}
+	
+	function get_coordinate(index) {
+		return [index[0] + (index[1]%2 == 0 ? 0 : 0.5), index[1]*Math.sqrt(3)/2];
+	}
+	
+	function get_index(coordinate) {
+		var index = [0,0];
+		index[1] = Math.round(coordinate[1]*2/Math.sqrt(3));
+		index[0] = Math.round(coordinate[0] - (Math.round(index[1])%2 == 0 ? 0 : 0.5));
+		return index;
+	}
+
+	
 	function scale_vector(vector, new_length) {
 		var arg = new_length/Math.sqrt(vector[0]*vector[0] + vector[1]*vector[1]);
 		var sx = vector[0]*arg;
@@ -766,34 +925,34 @@ function clone_graph_without_node(graph, node_id) {
 path += " l " + (delta[index_of_x_axis] - 2*scaled_delta[index_of_x_axis]) + " "
 			  + (delta[index_of_y_axis] - 2*scaled_delta[index_of_y_axis]);
 		}
+//		alert(path);
 		return path + " z";
 		
 	}
 	
-	function calculate_deltas_of_hexagon() {
+	function calculate_deltas_of_hexagon(length_of_side,angle_of_rotation) {
 		var deltas = [];
 		for (var side_index = 0;side_index <6; side_index++) {
-			var angle = (Math.PI/12 + side_index*Math.PI/3 );
-			var delta = calculate_vector(angle,51.5/Math.sqrt(2 + Math.sqrt(3)));
+			var angle = ( angle_of_rotation + side_index*Math.PI/3 );
+			var delta = calculate_vector(angle,length_of_side);
 			delta.push(120);
 			deltas.push(delta);
 		}
 		return deltas;
 	}
 	
-	function add_contact_to_graph(graph,uid) {
+	function add_contact_to_graph(graph,uid,coordinate) {
 
 		var renderer = function(r,node) {
 			var color = Raphael.getColor();
 			var contact = loaded_contacts[node.id];
-			
 			var set = r.set();
 			if (contact && loaded_contacts[node.id].photo) {
 				
 				var sqrt3 = Math.sqrt(3);
 //				var k = 51/sqrt3;
 
-				var deltas = calculate_deltas_of_hexagon();
+				var deltas = calculate_deltas_of_hexagon(51.5/Math.sqrt(2 + Math.sqrt(3)),Math.PI/12);
 				
 				
 //				var points = [[k*(3/2 - sqrt3/2), -k*(sqrt3 - 1)/2,120]
@@ -839,7 +998,8 @@ path += " l " + (delta[index_of_x_axis] - 2*scaled_delta[index_of_x_axis]) + " "
 		var contact = loaded_contacts[uid];
 		var contact_label = contact && contact.first_name ? contact.first_name : uid;
 //		var contact_text_color = app_user.friends[uid] ? "#4cbf9c" : "#aaaaaa";
-		graph.addNode(uid,{render:renderer, label:contact_label});		
+		graph.addNode(uid,{render:renderer, label:contact_label
+							, layoutPosX: coordinate[0], layoutPosY : coordinate[1]});		
 	}
 	
 	function draw_social_graph(groups) {
@@ -864,8 +1024,8 @@ path += " l " + (delta[index_of_x_axis] - 2*scaled_delta[index_of_x_axis]) + " "
 					uid_2 = tmp;
 				}
 
-				add_contact_to_graph(graph,uid_1);
-				add_contact_to_graph(graph,uid_2);
+				add_contact_to_graph(graph,uid_1,[0,0]);
+				add_contact_to_graph(graph,uid_2,[0,0]);
 
 					if (edges_counter[[uid_1,uid_2]]) {
 						edges_counter[[uid_1,uid_2]].push(group_index);
