@@ -31,3 +31,12 @@ function dumpObj(obj, name, indent, depth) {
 function div(op1, op2) {
 	return(op1 / op2 - op1 % op2 / op2);
 }	
+
+function index_of(array,value) {
+	for (var index = 0; index < array.length; index++) {
+		if (array[index] == value) {
+			return index;
+		}
+	}
+	return -1;
+}

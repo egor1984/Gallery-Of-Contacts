@@ -131,9 +131,11 @@ function uids_are_friends(user, uid1, uid2) {
 // Contacts can hide their friends information, so we will check both of them
 //	var contact1 = loaded_contacts[uid1];
 //	var contact2 = loaded_contacts[uid2];
-
-	return user.mutual_friends[uid1] && user.mutual_friends[uid1].indexOf(uid2) != -1
-			|| user.mutual_friends[uid2] && user.mutual_friends[uid2].indexOf(uid1) != -1;
+				
+	return user.mutual_friends 
+	&& (user.mutual_friends[uid1] 
+	&& index_of(user.mutual_friends[uid1],uid2) != -1 
+	|| user.mutual_friends[uid2] && index_of(user.mutual_friends[uid2],uid1) != -1);
 	
 //	return (contact1 && contact1.friends && contact1.friends[uid2])
 //			|| (contact2 && contact2.friends && contact2.friends[uid1]);
@@ -484,6 +486,19 @@ function process_output(user) {
 	}
 }
 
+function delete_value_in_grid(grid,index) {
+	if (grid[index[0]]) {
+		delete grid[index[0]][index[1]];
+		var count_of_indexes;
+		for (var indexes in grid[index[0]]) {
+			count_of_indexes++;
+		}
+		if (count_of_indexes == 0) {
+			delete grid[index[0]];
+		}
+	}
+}
+
 function get_value_in_grid(grid, index) {
 	if (grid[index[0]]) {
 		return grid[index[0]][index[1]];		
@@ -514,21 +529,20 @@ function find_index_for_uid(grid, friend_uid,indexes_of_placed_friends) {
 		return get_nearest_free_index(grid,middle_index);
 	} 
 	else {
-		return get_index_in_free_area(grid, 2);	
+		return get_index_in_free_area(grid, 1);	
 	}
 }
 
-function draw_grid_of_friends(user) {
-	var grid_of_friends = {};
-	
-	for (var friend_uid_string in user.friends) {
+
+function place_friend_in_grid_recursive(grid_of_friends,user,friend_uid_string,placed_friends) {
+	if (!placed_friends[friend_uid_string]) {
 		var friend_uid = Number(friend_uid_string);
 		var mutual_friends = user.mutual_friends[friend_uid_string];
 		var indexes_of_placed_friends = [];
-		if (mutual_friends) {		
+		if (mutual_friends) {					
 			for_each_index_in_grid(grid_of_friends, function(grid_index) {
 				var uid_of_friend_in_grid = get_value_in_grid(grid_of_friends,grid_index);
-				if (mutual_friends.indexOf(uid_of_friend_in_grid) != -1) {
+				if (index_of(mutual_friends,uid_of_friend_in_grid) != -1) {
 					indexes_of_placed_friends.push(grid_index);
 				}			
 			});
@@ -536,23 +550,58 @@ function draw_grid_of_friends(user) {
 		
 		var index_of_friend = find_index_for_uid(grid_of_friends,friend_uid,indexes_of_placed_friends); 
 		set_value_in_grid(grid_of_friends,index_of_friend, friend_uid);
+		placed_friends[friend_uid_string] = true;
+		if (mutual_friends) {
+			for (var mutual_friend_index = 0
+					; mutual_friend_index < mutual_friends.length; mutual_friend_index++) {
+				place_friend_in_grid_recursive(grid_of_friends,user,mutual_friends[mutual_friend_index]
+												,placed_friends);
+			}
+		}
 	}
+}
 
-	var graph = new Graph();
-	for_each_index_in_grid(grid_of_friends, function(grid_index) {
-		var uid = get_value_in_grid(grid_of_friends,grid_index);
-		var coordinate = get_coordinate(grid_index);
-		add_contact_to_graph(graph,uid,coordinate);				
-	});
+function draw_grid_of_friends(user) {
+	var grid_of_friends = {};
+	
+	var placed_friends = {};
+	
+	for (var friend_uid_string in user.friends) {
+		if (!placed_friends[friend_uid_string]) {
+			place_friend_in_grid_recursive(grid_of_friends,user,friend_uid_string,placed_friends);			
+		}
+	}
 	
 	var bounds = find_bounding_indexes(grid_of_friends);
-	graph.layoutMinX = bounds[0][0];
-	graph.layoutMinY = bounds[0][1];
-	graph.layoutMaxX = bounds[1][0];
-	graph.layoutMaxY = bounds[1][1];
+	var horizontal_shift = bounds[0][0] < 1 ? -bounds[0][0] + 1 : 0;
+	var vertical_shift = bounds[0][1] < 1 ? -bounds[0][1] + 1: 0;
+	var shifted_grid_of_friends = {};
 	
-	var renderer = new Graph.Renderer.Raphael('canvas', graph, 606, 500);
-	renderer.draw();
+	for_each_index_in_grid(grid_of_friends, function(grid_index) {
+		set_value_in_grid(shifted_grid_of_friends,[grid_index[0] + horizontal_shift
+		                                          ,grid_index[1] + vertical_shift]
+							,get_value_in_grid(grid_of_friends,grid_index));
+	});
+
+//	var graph = new Graph();
+    var paper = Raphael("canvas", 606, 500);
+    
+	
+	for_each_index_in_grid(shifted_grid_of_friends, function(grid_index) {
+		var uid = get_value_in_grid(shifted_grid_of_friends,grid_index);
+		var coordinate = get_coordinate(grid_index);
+		draw_contact_icon(paper,uid,coordinate);
+//		add_contact_to_graph(graph,uid,coordinate);				
+	});
+	
+//	var bounds = find_bounding_indexes(grid_of_friends);
+//	graph.layoutMinX = bounds[0][0];
+//	graph.layoutMinY = bounds[0][1];
+//	graph.layoutMaxX = bounds[1][0];
+//	graph.layoutMaxY = bounds[1][1];
+	
+//	var renderer = new Graph.Renderer.Raphael('canvas', graph, 606, 500);
+//	renderer.draw();
 }
 
 
@@ -722,7 +771,7 @@ function clone_graph_without_node(graph, node_id) {
 			if (node_1.connections.length > 0) {
 				var id_2 = node_1.connections[node_1.connections.length - 1];
 				node_1.connections.pop();
-				graph[id_2].connections.splice(graph[id_2].connections.indexOf(id_1),1);
+				graph[id_2].connections.splice(index_of(graph[id_2].connections,id_1),1);
 				segments.push([id_1,id_2]);
 				do {
 					 
@@ -941,28 +990,61 @@ path += " l " + (delta[index_of_x_axis] - 2*scaled_delta[index_of_x_axis]) + " "
 		return deltas;
 	}
 	
+	
+	function draw_contact_icon(paper,uid,coordinate) {
+		var cell_length = 51.5;
+		var scaled_coordinate = [coordinate[0]*cell_length
+		                         	,coordinate[1]*cell_length];
+		var contact = loaded_contacts[uid];
+		if (contact && contact.photo) {
+			
+			var sqrt3 = Math.sqrt(3);
+
+			var deltas = calculate_deltas_of_hexagon(cell_length/Math.sqrt(2 + Math.sqrt(3)),Math.PI/12);
+			
+			
+			var path_string = create_path_of_object(scaled_coordinate, deltas, true);
+			var image = paper.path(path_string);
+			
+			
+			
+//			var image = r.rect(node.point[0], node.point[1], 50, 50, 5);
+			image.attr({
+			    fill: "url(" + loaded_contacts[uid].photo + ")",
+			    "stroke-width": 0,
+			    "stroke-opacity":"0",
+			    "cursor" : "pointer"
+			});
+//			image.attr({"href":get_contact_url(uid),"target":"_top"});
+
+			
+			image.node.onclick = function() {
+				parent.window.location = get_contact_url(uid); 
+//ie workaround					
+//				window.open(get_contact_url(node.id));
+			};
+//            set.push(r.text(node.point[0] + 15, node.point[1] + 41, contact.first_name).attr({"text-anchor":"middle"}));
+//            set.push(r.text(node.point[0] + 15, node.point[1] + 51, contact.last_name).attr({"text-anchor":"middle"}));
+		}
+		else {
+			var color = Raphael.getColor();
+			paper.ellipse(scaled_coordinate[0], scaled_coordinate[1], 20, 15)
+				.attr({fill: color, stroke: color, "stroke-width": 2});
+		}
+	}
+	
+	
 	function add_contact_to_graph(graph,uid,coordinate) {
 
 		var renderer = function(r,node) {
-			var color = Raphael.getColor();
 			var contact = loaded_contacts[node.id];
 			var set = r.set();
 			if (contact && loaded_contacts[node.id].photo) {
 				
 				var sqrt3 = Math.sqrt(3);
-//				var k = 51/sqrt3;
 
 				var deltas = calculate_deltas_of_hexagon(51.5/Math.sqrt(2 + Math.sqrt(3)),Math.PI/12);
 				
-				
-//				var points = [[k*(3/2 - sqrt3/2), -k*(sqrt3 - 1)/2,120]
-//							 ,[k*(2*sqrt3 - 3), 0,150]
-//							 ,[k*(3/2 - sqrt3/2), k*(sqrt3 - 1)/2,150]
-//							,[0,k,120]
-//							,[-k*(3/2 - sqrt3/2), k*(sqrt3 - 1)/2,120]
-//							,[-k*(2*sqrt3 - 3),0,150]
-//							,[-k*(3/2 - sqrt3/2),-k*(sqrt3 - 1)/2,150]
-//							,[0,-k,120]];
 				
 				var path_string = create_path_of_object([node.point[0],node.point[1]], deltas, true);
 				var image = r.path(path_string);
@@ -1060,7 +1142,7 @@ path += " l " + (delta[index_of_x_axis] - 2*scaled_delta[index_of_x_axis]) + " "
 		var groups_to_draw = [];
 		for (var group_index = 0; group_index < groups.length;group_index++) {			
 			var group = groups[group_index];
-			var index_of_user_uid = group.uids.indexOf(get_app_user_uid()); 
+			var index_of_user_uid = index_of(group.uids,get_app_user_uid()); 
 			if (index_of_user_uid != -1) {
 				var group_to_draw = new Object({uids:group.uids.concat()
 					,used_in_merged:group.used_in_merged});
