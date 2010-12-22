@@ -16,7 +16,7 @@ var friends_loader = new contact_loader("execute", function(details_requests) {
 				}
 				code += "API.friends.get({uid:" + details_requests[i].arguments.contact.uid
 									+ "})";
-			}				
+			}
 			code += "]; return ret;";
 			return {api_id:"1918079",code:code,v:"3.0"};			
 		}, function(arguments,response) {
@@ -62,6 +62,9 @@ var mutual_friends_loader = new contact_loader("execute", function(details_reque
 	}
 	if (!arguments.contact_2.mutual_friends) {
 		arguments.contact_2.mutual_friends = {};
+	}
+	if (response.constructor != Array) {
+		response = [];
 	}
 	arguments.contact_1.mutual_friends[arguments.contact_2.uid] = response;
 	arguments.contact_2.mutual_friends[arguments.contact_1.uid] = response;
