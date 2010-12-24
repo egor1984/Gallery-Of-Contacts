@@ -66,8 +66,26 @@ var mutual_friends_loader = new contact_loader("execute", function(details_reque
 	if (response.constructor != Array) {
 		response = [];
 	}
-	arguments.contact_1.mutual_friends[arguments.contact_2.uid] = response;
-	arguments.contact_2.mutual_friends[arguments.contact_1.uid] = response;
+	for (var uid_index = 0;uid_index < response.length;uid_index++) {
+		var mutual_friend_uid = response[uid_index];
+		if (!arguments.contact_1.mutual_friends[arguments.contact_2.uid]) {
+			arguments.contact_1.mutual_friends[arguments.contact_2.uid] = [];
+		}
+		if (index_of(arguments.contact_1.mutual_friends[arguments.contact_2.uid]
+				,mutual_friend_uid) == -1) {
+			arguments.contact_1.mutual_friends[arguments.contact_2.uid].push(mutual_friend_uid);					
+		}
+		if (!arguments.contact_1.mutual_friends[mutual_friend_uid]) {
+			arguments.contact_1.mutual_friends[mutual_friend_uid] = [];
+		}
+		if (index_of(arguments.contact_1.mutual_friends[mutual_friend_uid]
+				,arguments.contact_2.uid) == -1) {
+			arguments.contact_1.mutual_friends[mutual_friend_uid].push(arguments.contact_2.uid);					
+		}
+		
+	}
+//	arguments.contact_1.mutual_friends[arguments.contact_2.uid] = response;
+//	arguments.contact_2.mutual_friends[arguments.contact_1.uid] = response;
 },25);
 
 
@@ -523,39 +541,45 @@ function for_each_index_in_grid(grid,callback) {
 	}
 }
 
-function find_index_for_uid(grid, friend_uid,indexes_of_placed_friends) {
-	if (indexes_of_placed_friends.length != 0) {
-		var middle_index = get_middle_index(indexes_of_placed_friends);
+function find_index_for_uid(grid, friend_uid,indexes_of_placed_contacts) {
+	if (indexes_of_placed_contacts.length != 0) {
+		var middle_index = get_middle_index(indexes_of_placed_contacts);
 		return get_nearest_free_index(grid,middle_index);
 	} 
 	else {
-		return get_index_in_free_area(grid, 1);	
+		return get_index_in_free_area(grid, 3);	
 	}
 }
 
 
-function place_friend_in_grid_recursive(grid_of_friends,user,friend_uid_string,placed_friends) {
+function place_friend_in_grid_recursive(grid_of_friends,user,friend_uid_string
+		,placed_friends,indexes_of_contacts_without_mutual_friends) {
 	if (!placed_friends[friend_uid_string]) {
 		var friend_uid = Number(friend_uid_string);
 		var mutual_friends = user.mutual_friends[friend_uid_string];
-		var indexes_of_placed_friends = [];
-		if (mutual_friends) {					
+		var indexes_of_placed_contacts = [];
+		if (mutual_friends && mutual_friends.length > 0) {					
 			for_each_index_in_grid(grid_of_friends, function(grid_index) {
 				var uid_of_friend_in_grid = get_value_in_grid(grid_of_friends,grid_index);
 				if (index_of(mutual_friends,uid_of_friend_in_grid) != -1) {
-					indexes_of_placed_friends.push(grid_index);
+					indexes_of_placed_contacts.push(grid_index);
 				}			
 			});
+		} else {
+			indexes_of_placed_contacts = indexes_of_contacts_without_mutual_friends;
 		}
 		
-		var index_of_friend = find_index_for_uid(grid_of_friends,friend_uid,indexes_of_placed_friends); 
+		var index_of_friend = find_index_for_uid(grid_of_friends,friend_uid,indexes_of_placed_contacts);
+		if (!mutual_friends || mutual_friends.length == 0) {
+			indexes_of_contacts_without_mutual_friends.push(index_of_friend);
+		}
 		set_value_in_grid(grid_of_friends,index_of_friend, friend_uid);
 		placed_friends[friend_uid_string] = true;
 		if (mutual_friends) {
 			for (var mutual_friend_index = 0
 					; mutual_friend_index < mutual_friends.length; mutual_friend_index++) {
 				place_friend_in_grid_recursive(grid_of_friends,user,mutual_friends[mutual_friend_index]
-												,placed_friends);
+				,placed_friends,indexes_of_contacts_without_mutual_friends);
 			}
 		}
 	}
@@ -565,10 +589,22 @@ function draw_grid_of_friends(user) {
 	var grid_of_friends = {};
 	
 	var placed_friends = {};
+	var indexes_of_contacts_without_mutual_friends = [];
 	
+	var friends_array = [];
 	for (var friend_uid_string in user.friends) {
-		if (!placed_friends[friend_uid_string]) {
-			place_friend_in_grid_recursive(grid_of_friends,user,friend_uid_string,placed_friends);			
+		friends_array.push(Number(friend_uid_string));
+	}
+	var sorted_friends = friends_array.sort(function(friend_1,friend_2) {
+		var counter_1 = user.mutual_friends[friend_1] ? user.mutual_friends[friend_1].length : 0;
+		var counter_2 = user.mutual_friends[friend_2] ? user.mutual_friends[friend_2].length : 0;
+		return counter_2 - counter_1;
+	});
+	for (var uid_index = 0; uid_index < sorted_friends.length; uid_index++) {
+		friend_uid = sorted_friends[uid_index];
+		if (!placed_friends[friend_uid]) {
+			place_friend_in_grid_recursive(grid_of_friends,user,friend_uid
+					,placed_friends,indexes_of_contacts_without_mutual_friends);			
 		}
 	}
 	
@@ -863,22 +899,21 @@ function clone_graph_without_node(graph, node_id) {
 	
 	function get_nearest_free_index(grid,index) {
 		
-		var r = 1;
 		if (!get_value_in_grid(grid,index)) {
 			return index;
 		}
-		var coordinate = get_coordinate(index);
+		var r = 1;
+		var current_index = index;
 		while (true) {
-			coordinate = [coordinate[0] + 1,coordinate[1]];
-			var deltas = calculate_deltas_of_hexagon(1,Math.PI*2/3);
-			for (var delta_index = 0; delta_index < deltas.length; delta_index++) {
-				var delta = deltas[delta_index];
-				for (var i = 0; i < r; i++) {
-					coordinate = [coordinate[0] + delta[0],coordinate[1] + delta[1]];
-					var neighbor_index = get_index(coordinate);
-					if (!get_value_in_grid(grid,neighbor_index)) {
-						return neighbor_index;
+			current_index = [current_index[0],current_index[1] + 1];
+			var shifts = [[1,0],[1,-1],[0,-1],[-1,0],[-1,1],[0,1],[1,0]];
+			for (var shift_index = 0; shift_index < shifts.length;shift_index++) {
+				var shift = shifts[shift_index];
+				for (var counter = 0; counter < r; counter++) {
+					if (!get_value_in_grid(grid,current_index)) {
+						return current_index;
 					}
+					current_index = [current_index[0] + shift[0],current_index[1] + shift[1]];
 				}
 			}
 			r++;
@@ -891,26 +926,35 @@ function clone_graph_without_node(graph, node_id) {
 	function get_middle_index(indexes) {
 		var accumulator = [0,0];
 		for (var index_of_index = 0; index_of_index < indexes.length; index_of_index++) {
-			var coordinate = get_coordinate(indexes[index_of_index]);
-			accumulator[0]+=coordinate[0];
-			accumulator[1]+=coordinate[1];			
+			var index = indexes[index_of_index];
+			accumulator[0]+=index[0];
+			accumulator[1]+=index[1];			
+//			var coordinate = get_coordinate(indexes[index_of_index]);
+//			accumulator[0]+=coordinate[0];
+//			accumulator[1]+=coordinate[1];			
 		}
 		
-		var middle_coordinate = [accumulator[0]/indexes.length,accumulator[1]/indexes.length];
+		var middle_index = [Math.round(accumulator[0]/indexes.length)
+		                    ,Math.round(accumulator[1]/indexes.length)];
 		
-		return get_index(middle_coordinate);
+//		return get_index(middle_coordinate);
+		return middle_index;
 	}
 	
 	function get_coordinate(index) {
-		return [index[0] + (index[1]%2 == 0 ? 0 : 0.5), index[1]*Math.sqrt(3)/2];
+		var x_offset = (-index[1]*(Math.sqrt(3) - 3/2) + index[0]*Math.sqrt(3)/2);
+		var y_offset = (index[1]*Math.sqrt(3)/2 - index[0]*(Math.sqrt(3) - 3/2));
+		
+//		return [index[0] + (index[1]%2 == 0 ? 0 : 0.5), index[1]*Math.sqrt(3)/2];
+		return [x_offset,y_offset];
 	}
-	
-	function get_index(coordinate) {
-		var index = [0,0];
-		index[1] = Math.round(coordinate[1]*2/Math.sqrt(3));
-		index[0] = Math.round(coordinate[0] - (Math.round(index[1])%2 == 0 ? 0 : 0.5));
-		return index;
-	}
+//	
+//	function get_index(coordinate) {
+//		var index = [0,0];
+//		index[1] = Math.round(coordinate[1]*2/Math.sqrt(3));
+//		index[0] = Math.round(coordinate[0] - (Math.round(index[1])%2 == 0 ? 0 : 0.5));
+//		return index;
+//	}
 
 	
 	function scale_vector(vector, new_length) {
@@ -993,17 +1037,25 @@ path += " l " + (delta[index_of_x_axis] - 2*scaled_delta[index_of_x_axis]) + " "
 	
 	function draw_contact_icon(paper,uid,coordinate) {
 		var cell_length = 51.5;
-		var scaled_coordinate = [coordinate[0]*cell_length
-		                         	,coordinate[1]*cell_length];
+//		coordinate[1] += coordinate[0]/2;
+		var x_offset = (cell_length + 5)*coordinate[0];
+//		var x_offset = cell_length*(coordinate[0]*1.1*Math.sqrt(3)/2 + coordinate[1]*1.1*(Math.sqrt(3) - 3/2));
+		var y_offset = (cell_length + 5)*coordinate[1];
+		
+		
+//		var y_offset = cell_length*(coordinate[0]*(Math.sqrt(3) - 3/2) + coordinate[1]*Math.sqrt(3)/2);
+		var translated_coordinate = [x_offset
+		                         	,y_offset];
 		var contact = loaded_contacts[uid];
 		if (contact && contact.photo) {
 			
 			var sqrt3 = Math.sqrt(3);
 
+			
 			var deltas = calculate_deltas_of_hexagon(cell_length/Math.sqrt(2 + Math.sqrt(3)),Math.PI/12);
 			
 			
-			var path_string = create_path_of_object(scaled_coordinate, deltas, true);
+			var path_string = create_path_of_object(translated_coordinate, deltas, true);
 			var image = paper.path(path_string);
 			
 			
@@ -1019,16 +1071,19 @@ path += " l " + (delta[index_of_x_axis] - 2*scaled_delta[index_of_x_axis]) + " "
 
 			
 			image.node.onclick = function() {
-				parent.window.location = get_contact_url(uid); 
-//ie workaround					
-//				window.open(get_contact_url(node.id));
+				try {
+					parent.window.location = get_contact_url(uid);
+				} catch (exception) {
+//					ie workaround					
+					window.open(get_contact_url(uid));
+				}
 			};
 //            set.push(r.text(node.point[0] + 15, node.point[1] + 41, contact.first_name).attr({"text-anchor":"middle"}));
 //            set.push(r.text(node.point[0] + 15, node.point[1] + 51, contact.last_name).attr({"text-anchor":"middle"}));
 		}
 		else {
 			var color = Raphael.getColor();
-			paper.ellipse(scaled_coordinate[0], scaled_coordinate[1], 20, 15)
+			paper.ellipse(translated_coordinate[0], translated_coordinate[1], 20, 15)
 				.attr({fill: color, stroke: color, "stroke-width": 2});
 		}
 	}
