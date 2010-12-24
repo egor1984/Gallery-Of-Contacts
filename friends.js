@@ -699,7 +699,7 @@ setTimeout( function() {
 //	});
 	
 
-}, 1000);
+}, 0);
 
 	function load_friends_of_contact_recursive(contact,depth_of_friends_retrival,callback) {
 		friends_loader.load( {contact:contact, fields:"uid"}, function(arguments,result_message) {
