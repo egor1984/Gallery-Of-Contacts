@@ -97,24 +97,6 @@ var friends_getMutual_traits = {"method_name" : "execute", "arguments_builder" :
 },"max_sum" : 25};
 
 
-/*
-setInterval( function() {
-	if (friends_loader.queue.length != 0) {
-		friends_loader.send_next_request();
-	}
-	else
-	{
-		if (profile_loader.queue.length != 0) {
-			profile_loader.send_next_request();
-		} else {
-			if (mutual_friends_loader.queue.length != 0) {
-				mutual_friends_loader.send_next_request();
-			}
-		}
-	}
-}, 400);
-*/
-
 var call_counter = 0;
 var l = -1;
 var clusters = new Array();
@@ -143,28 +125,13 @@ function indexOf(arr, pred) {
 	return index;
 }
 
-/*
-function is_friends( contact1, contact2) {
-// Contacts can hide their friends information, so we will check both of them
-	return (contact1.friends && contact1.friends[contact2.uid])
-			|| (contact2.friends && contact2.friends[contact1.uid]);
-}
-*/
-
-
-
 function uids_are_friends(user, uid1, uid2) {
 // Contacts can hide their friends information, so we will check both of them
-//	var contact1 = loaded_contacts[uid1];
-//	var contact2 = loaded_contacts[uid2];
 				
 	return user.mutual_friends 
 	&& (user.mutual_friends[uid1] 
 	&& index_of(user.mutual_friends[uid1],uid2) != -1 
 	|| user.mutual_friends[uid2] && index_of(user.mutual_friends[uid2],uid1) != -1);
-	
-//	return (contact1 && contact1.friends && contact1.friends[uid2])
-//			|| (contact2 && contact2.friends && contact2.friends[uid1]);
 }
 
 
@@ -627,7 +594,6 @@ function draw_grid_of_friends(user) {
 							,get_value_in_grid(grid_of_friends,grid_index));
 	});
 
-//	var graph = new Graph();
     var paper = Raphael("canvas", 606, 500);
     
 	
@@ -635,17 +601,8 @@ function draw_grid_of_friends(user) {
 		var uid = get_value_in_grid(shifted_grid_of_friends,grid_index);
 		var coordinate = get_coordinate(grid_index);
 		draw_contact_icon(paper,uid,coordinate);
-//		add_contact_to_graph(graph,uid,coordinate);				
 	});
 	
-//	var bounds = find_bounding_indexes(grid_of_friends);
-//	graph.layoutMinX = bounds[0][0];
-//	graph.layoutMinY = bounds[0][1];
-//	graph.layoutMaxX = bounds[1][0];
-//	graph.layoutMaxY = bounds[1][1];
-	
-//	var renderer = new Graph.Renderer.Raphael('canvas', graph, 606, 500);
-//	renderer.draw();
 }
 
 
@@ -937,15 +894,11 @@ function clone_graph_without_node(graph, node_id) {
 			var index = indexes[index_of_index];
 			accumulator[0]+=index[0];
 			accumulator[1]+=index[1];			
-//			var coordinate = get_coordinate(indexes[index_of_index]);
-//			accumulator[0]+=coordinate[0];
-//			accumulator[1]+=coordinate[1];			
 		}
 		
 		var middle_index = [Math.round(accumulator[0]/indexes.length)
 		                    ,Math.round(accumulator[1]/indexes.length)];
 		
-//		return get_index(middle_coordinate);
 		return middle_index;
 	}
 	
@@ -953,16 +906,8 @@ function clone_graph_without_node(graph, node_id) {
 		var x_offset = (-index[1]*(Math.sqrt(3) - 3/2) + index[0]*Math.sqrt(3)/2);
 		var y_offset = (index[1]*Math.sqrt(3)/2 - index[0]*(Math.sqrt(3) - 3/2));
 		
-//		return [index[0] + (index[1]%2 == 0 ? 0 : 0.5), index[1]*Math.sqrt(3)/2];
 		return [x_offset,y_offset];
 	}
-//	
-//	function get_index(coordinate) {
-//		var index = [0,0];
-//		index[1] = Math.round(coordinate[1]*2/Math.sqrt(3));
-//		index[0] = Math.round(coordinate[0] - (Math.round(index[1])%2 == 0 ? 0 : 0.5));
-//		return index;
-//	}
 
 	
 	function scale_vector(vector, new_length) {
@@ -1017,16 +962,10 @@ function clone_graph_without_node(graph, node_id) {
 				+ ellipse_destination[0] + "," + ellipse_destination[1];
 					
 			
-//			path += " l " + previous_point[invert_axis_of_object ? 1 : 0]*rf + " "
-//						  + previous_point[invert_axis_of_object ? 0 : 1]*rf;
-//			path += " l " + point[invert_axis_of_object ? 1 : 0]*rf + " "
-//			  + point[invert_axis_of_object ? 0 : 1]*rf;
-
 
 path += " l " + (delta[index_of_x_axis] - 2*scaled_delta[index_of_x_axis]) + " "
 			  + (delta[index_of_y_axis] - 2*scaled_delta[index_of_y_axis]);
 		}
-//		alert(path);
 		return path + " z";
 		
 	}
@@ -1045,13 +984,10 @@ path += " l " + (delta[index_of_x_axis] - 2*scaled_delta[index_of_x_axis]) + " "
 	
 	function draw_contact_icon(paper,uid,coordinate) {
 		var cell_length = 51.5;
-//		coordinate[1] += coordinate[0]/2;
 		var x_offset = (cell_length + 5)*coordinate[0];
-//		var x_offset = cell_length*(coordinate[0]*1.1*Math.sqrt(3)/2 + coordinate[1]*1.1*(Math.sqrt(3) - 3/2));
 		var y_offset = (cell_length + 5)*coordinate[1];
 		
 		
-//		var y_offset = cell_length*(coordinate[0]*(Math.sqrt(3) - 3/2) + coordinate[1]*Math.sqrt(3)/2);
 		var translated_coordinate = [x_offset
 		                         	,y_offset];
 		var contact = loaded_contacts[uid];
@@ -1197,7 +1133,6 @@ path += " l " + (delta[index_of_x_axis] - 2*scaled_delta[index_of_x_axis]) + " "
 		/* draw the graph using the RaphaelJS draw implementation */
 		var renderer = new Graph.Renderer.Raphael('canvas', graph, 606, 500);
 		renderer.draw();
-//		alert(line_counter);
 	}
 	
 	function refreshGroupList(groups) {
