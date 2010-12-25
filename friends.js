@@ -518,8 +518,8 @@ function for_each_index_in_grid(grid,callback) {
 
 function find_index_for_uid(grid, friend_uid,indexes_of_placed_contacts) {
 	if (indexes_of_placed_contacts.length != 0) {
-		var middle_index = get_middle_index(indexes_of_placed_contacts);
-		return get_nearest_free_index(grid,middle_index);
+		var middle_coordinate = get_middle_coordinate(indexes_of_placed_contacts);
+		return get_nearest_free_index(grid,middle_coordinate);
 	} 
 	else {
 		return get_index_in_free_area(grid, 2);	
@@ -550,10 +550,26 @@ function place_friend_in_grid_recursive(grid_of_friends,user,friend_uid_string
 		}
 		set_value_in_grid(grid_of_friends,index_of_friend, friend_uid);
 		placed_friends[friend_uid_string] = true;
+				
+		
 		if (mutual_friends) {
-			for (var mutual_friend_index = 0
-					; mutual_friend_index < mutual_friends.length; mutual_friend_index++) {
-				place_friend_in_grid_recursive(grid_of_friends,user,mutual_friends[mutual_friend_index]
+			var friends_array = [];
+			for (var mutual_friend_index = 0; mutual_friend_index < mutual_friends.length
+												;mutual_friend_index++) {
+				friends_array.push(mutual_friends[mutual_friend_index]);
+			}
+			
+			var sorted_friends = friends_array.sort(function(friend_1,friend_2) {
+				var counter_1 = user.mutual_friends[friend_1] ? user.mutual_friends[friend_1].length : 0;
+				var counter_2 = user.mutual_friends[friend_2] ? user.mutual_friends[friend_2].length : 0;
+				var delta_between_counters = counter_2 - counter_1;
+				return delta_between_counters != 0 ? delta_between_counters : friend_2 - friend_1;
+			});
+			
+			for (var sorted_friends_index = 0
+					; sorted_friends_index < sorted_friends.length; sorted_friends_index++) {
+				var friend = sorted_friends[sorted_friends_index];
+				place_friend_in_grid_recursive(grid_of_friends,user,friend
 				,placed_friends,indexes_of_contacts_without_mutual_friends);
 			}
 		}
@@ -570,11 +586,16 @@ function draw_grid_of_friends(user) {
 	for (var friend_uid_string in user.friends) {
 		friends_array.push(Number(friend_uid_string));
 	}
+	
 	var sorted_friends = friends_array.sort(function(friend_1,friend_2) {
 		var counter_1 = user.mutual_friends[friend_1] ? user.mutual_friends[friend_1].length : 0;
 		var counter_2 = user.mutual_friends[friend_2] ? user.mutual_friends[friend_2].length : 0;
-		return counter_2 - counter_1;
+		var delta_between_counters = counter_2 - counter_1;
+		return delta_between_counters != 0 ? delta_between_counters : friend_2 - friend_1;
 	});
+	
+	
+	
 	for (var uid_index = 0; uid_index < sorted_friends.length; uid_index++) {
 		friend_uid = sorted_friends[uid_index];
 		if (!placed_friends[friend_uid]) {
@@ -862,51 +883,100 @@ function clone_graph_without_node(graph, node_id) {
 		}
 	}
 	
-	function get_nearest_free_index(grid,index) {
+	function get_distance(coordinate_1,coordinate_2) {
+		var delta = [coordinate_2[0]-coordinate_1[0]
+					,coordinate_2[1]-coordinate_1[1]];		
+		return Math.sqrt(delta[0]*delta[0] + delta[1]*delta[1]);
+	}
+	
+	function get_nearest_free_index(grid,coordinate) {
 		
+		var index = get_index(coordinate);
 		if (!get_value_in_grid(grid,index)) {
 			return index;
 		}
 		var r = 1;
+		var nearest_found_free_index = undefined;
 		var current_index = index;
 		while (true) {
 			current_index = [current_index[0],current_index[1] + 1];
 			var shifts = [[1,-1],[0,-1],[-1,0],[-1,1],[0,1],[1,0]];
+			var nearest_found_index_in_cycle = current_index;
+
 			for (var shift_index = 0; shift_index < shifts.length;shift_index++) {
 				var shift = shifts[shift_index];
 				for (var counter = 0; counter < r; counter++) {
+					var distance_to_current_index = get_distance(coordinate
+							,get_coordinate(current_index));
+					var distance_to_nearest_found_index_in_cycle = get_distance(coordinate
+														,get_coordinate(nearest_found_index_in_cycle));
+					if (distance_to_current_index < distance_to_nearest_found_index_in_cycle) {
+						nearest_found_index_in_cycle = current_index;
+					}
 					if (!get_value_in_grid(grid,current_index)) {
-						return current_index;
+						if (nearest_found_free_index) {
+							var distance_to_nearest_found_free_index = get_distance(coordinate
+															,get_coordinate(nearest_found_free_index));
+							
+							if (distance_to_current_index < distance_to_nearest_found_free_index) {
+								nearest_found_free_index = current_index;
+							}
+						}
+						else {
+							nearest_found_free_index = current_index;
+						}
 					}
 					current_index = [current_index[0] + shift[0],current_index[1] + shift[1]];
+				}
+			}
+			if (nearest_found_free_index) {
+				var distance_to_nearest_found_free_index = get_distance(coordinate
+															,get_coordinate(nearest_found_free_index));
+				var distance_to_nearest_found_index_in_cycle = get_distance(coordinate
+														,get_coordinate(nearest_found_index_in_cycle));
+				if (distance_to_nearest_found_free_index <= distance_to_nearest_found_index_in_cycle) {
+					return nearest_found_free_index;
 				}
 			}
 			r++;
 			
 		}
-		return index;
-		
 	}
 	
-	function get_middle_index(indexes) {
+	function get_middle_coordinate(indexes) {
 		var accumulator = [0,0];
 		for (var index_of_index = 0; index_of_index < indexes.length; index_of_index++) {
 			var index = indexes[index_of_index];
-			accumulator[0]+=index[0];
-			accumulator[1]+=index[1];			
+			var coordinate = get_coordinate(index);
+			accumulator[0]+=coordinate[0];
+			accumulator[1]+=coordinate[1];			
 		}
 		
-		var middle_index = [Math.round(accumulator[0]/indexes.length)
-		                    ,Math.round(accumulator[1]/indexes.length)];
+		var middle_coordinate = [accumulator[0]/indexes.length
+		                    ,accumulator[1]/indexes.length];
 		
-		return middle_index;
+		return middle_coordinate;
 	}
 	
 	function get_coordinate(index) {
-		var x_offset = (-index[1]*(Math.sqrt(3) - 3/2) + index[0]*Math.sqrt(3)/2);
-		var y_offset = (index[1]*Math.sqrt(3)/2 - index[0]*(Math.sqrt(3) - 3/2));
+		var k1 = Math.sqrt(3)/2;
+		var k2 = Math.sqrt(3) - 3/2;
+		
+		var x_offset = (-index[1]*k2 + index[0]*k1);
+		var y_offset = (index[1]*k1 - index[0]*k2);
 		
 		return [x_offset,y_offset];
+	}
+
+	function get_index(coordinate) {
+		var divisor = 3*Math.sqrt(3) - 18/4;
+		
+		var k1 = Math.sqrt(3)/2;
+		var k2 = Math.sqrt(3) - 3/2;
+		
+		
+		return [Math.round((k1*coordinate[0] + k2*coordinate[1])/divisor)
+				,Math.round((k1*coordinate[1] + k2*coordinate[0])/divisor)];
 	}
 
 	
@@ -988,8 +1058,6 @@ path += " l " + (delta[index_of_x_axis] - 2*scaled_delta[index_of_x_axis]) + " "
 		var y_offset = (cell_length + 5)*coordinate[1];
 		
 		
-		var translated_coordinate = [x_offset
-		                         	,y_offset];
 		var contact = loaded_contacts[uid];
 		if (contact && contact.photo) {
 			
@@ -998,6 +1066,8 @@ path += " l " + (delta[index_of_x_axis] - 2*scaled_delta[index_of_x_axis]) + " "
 			
 			var deltas = calculate_deltas_of_hexagon(cell_length/Math.sqrt(2 + Math.sqrt(3)),Math.PI/12);
 			
+			var translated_coordinate = [x_offset + deltas[4][0]
+				                         	,y_offset + deltas[4][1]];
 			
 			var path_string = create_path_of_object(translated_coordinate, deltas, true);
 			var image = paper.path(path_string);
