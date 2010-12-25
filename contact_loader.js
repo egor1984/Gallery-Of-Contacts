@@ -75,7 +75,7 @@ function contact_loader()
 					}
 					else
 					{
-						this_local.queue_request( details_request.arguments
+						this_local.queue_request(details_request.traits, details_request.arguments
 											,details_request.on_done,new_size_factor);
 					}
 				}
@@ -96,7 +96,7 @@ function contact_loader()
 				details_requests[i].done = true;
 				if (data.error) {
 					if (data.error.error_msg == "Too many requests per second") {
-						this_local.queue_request( details_requests[i].arguments
+						this_local.queue_request(details_requests[i].traits, details_requests[i].arguments
 												, details_requests[i].on_done,details_requests[i].size_factor);
 					}	else {
 						details_requests[i].on_done( details_requests[i].arguments,data.error.error_msg);
