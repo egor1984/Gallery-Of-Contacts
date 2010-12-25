@@ -871,7 +871,7 @@ function clone_graph_without_node(graph, node_id) {
 		var current_index = index;
 		while (true) {
 			current_index = [current_index[0],current_index[1] + 1];
-			var shifts = [[1,0],[1,-1],[0,-1],[-1,0],[-1,1],[0,1],[1,0]];
+			var shifts = [[1,-1],[0,-1],[-1,0],[-1,1],[0,1],[1,0]];
 			for (var shift_index = 0; shift_index < shifts.length;shift_index++) {
 				var shift = shifts[shift_index];
 				for (var counter = 0; counter < r; counter++) {
