@@ -1066,10 +1066,9 @@ path += " l " + (delta[index_of_x_axis] - 2*scaled_delta[index_of_x_axis]) + " "
 			
 			var deltas = calculate_deltas_of_hexagon(cell_length/Math.sqrt(2 + Math.sqrt(3)),Math.PI/12);
 			
-			var translated_coordinate = [x_offset + deltas[4][0]
-				                         	,y_offset + deltas[4][1]];
 			
-			var path_string = create_path_of_object(translated_coordinate, deltas, true);
+			var path_string = create_path_of_object([x_offset + deltas[4][0]
+													,y_offset + deltas[4][1]], deltas, true);
 			var image = paper.path(path_string);
 			
 			
@@ -1097,7 +1096,7 @@ path += " l " + (delta[index_of_x_axis] - 2*scaled_delta[index_of_x_axis]) + " "
 		}
 		else {
 			var color = Raphael.getColor();
-			paper.ellipse(translated_coordinate[0], translated_coordinate[1], 20, 15)
+			paper.ellipse(x_offset, y_offset, 20, 15)
 				.attr({fill: color, stroke: color, "stroke-width": 2});
 		}
 	}
