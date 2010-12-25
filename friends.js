@@ -654,7 +654,7 @@ setTimeout( function() {
 	var result = JSON.parse(unescape(result_string));
 	if (!result.response) {
 		if (result.error) {
-			alert(data.error.error_msg);
+			alert(result.error.error_msg);
 			return;
 		}
 	}
