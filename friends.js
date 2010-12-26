@@ -492,6 +492,18 @@ function delete_value_in_grid(grid,index) {
 	}
 }
 
+function get_index_in_grid(grid,value) {
+//may be optimized	
+	var index = undefined;
+	for_each_index_in_grid(grid,function(current_index) {		
+		if (get_value_in_grid(grid,current_index) == value) {
+
+			index = current_index;
+		}
+	});
+	return index;
+}
+
 function get_value_in_grid(grid, index) {
 	if (grid[index[0]]) {
 		return grid[index[0]][index[1]];		
@@ -526,103 +538,113 @@ function find_index_for_uid(grid, friend_uid,indexes_of_placed_contacts) {
 	}
 }
 
-
-function place_friend_in_grid_recursive(grid_of_friends,user,friend_uid_string
-		,placed_friends,indexes_of_contacts_without_mutual_friends) {
-	if (!placed_friends[friend_uid_string]) {
-		var friend_uid = Number(friend_uid_string);
-		var mutual_friends = user.mutual_friends[friend_uid_string];
-		var indexes_of_placed_contacts = [];
-		if (mutual_friends && mutual_friends.length > 0) {					
-			for_each_index_in_grid(grid_of_friends, function(grid_index) {
-				var uid_of_friend_in_grid = get_value_in_grid(grid_of_friends,grid_index);
-				if (index_of(mutual_friends,uid_of_friend_in_grid) != -1) {
-					indexes_of_placed_contacts.push(grid_index);
-				}			
-			});
-		} else {
-			indexes_of_placed_contacts = indexes_of_contacts_without_mutual_friends;
-		}
-		
-		var index_of_friend = find_index_for_uid(grid_of_friends,friend_uid,indexes_of_placed_contacts);
-		if (!mutual_friends || mutual_friends.length == 0) {
-			indexes_of_contacts_without_mutual_friends.push(index_of_friend);
-		}
-		set_value_in_grid(grid_of_friends,index_of_friend, friend_uid);
-		placed_friends[friend_uid_string] = true;
-				
-		
-		if (mutual_friends) {
-			var friends_array = [];
-			for (var mutual_friend_index = 0; mutual_friend_index < mutual_friends.length
-												;mutual_friend_index++) {
-				friends_array.push(mutual_friends[mutual_friend_index]);
-			}
-			
-			var sorted_friends = friends_array.sort(function(friend_1,friend_2) {
-				var counter_1 = user.mutual_friends[friend_1] ? user.mutual_friends[friend_1].length : 0;
-				var counter_2 = user.mutual_friends[friend_2] ? user.mutual_friends[friend_2].length : 0;
-				var delta_between_counters = counter_2 - counter_1;
-				return delta_between_counters != 0 ? delta_between_counters : friend_2 - friend_1;
-			});
-			
-			for (var sorted_friends_index = 0
-					; sorted_friends_index < sorted_friends.length; sorted_friends_index++) {
-				var friend = sorted_friends[sorted_friends_index];
-				place_friend_in_grid_recursive(grid_of_friends,user,friend
-				,placed_friends,indexes_of_contacts_without_mutual_friends);
+function add_mutual_friends_recursively(user,uid,list,excludes) {
+	var mutual_friends = user.mutual_friends[uid];
+	if (mutual_friends) {
+		for (var i = 0; i < mutual_friends.length; i++) {
+			var mutual_friend_uid = mutual_friends[i];
+			if (!excludes[mutual_friend_uid]) {
+				list.push(mutual_friend_uid);
+				excludes[mutual_friend_uid] = true;
+				add_mutual_friends_recursively(user,mutual_friend_uid,list,excludes);
 			}
 		}
 	}
 }
 
-function draw_grid_of_friends(user) {
-	var grid_of_friends = {};
+function create_grid_of_friends(user,group) {
+	var grid = {};
+	for (var i = 0; i < group.length; i++) {
+		var friend_uid = group[i];
+		var indexes_of_placed_contacts = [];
+		var mutual_friends = user.mutual_friends[friend_uid];
+		if (mutual_friends) {
+			for (var j = 0; j < mutual_friends.length; j++) {
+				var uid_of_mutual_friend = mutual_friends[j];
+				var index_of_mutual_friend = get_index_in_grid(grid,uid_of_mutual_friend);
+
+				if (index_of_mutual_friend) {
+					indexes_of_placed_contacts.push(index_of_mutual_friend);
+				}						
+			}			
+		}
+		var index_of_friend = find_index_for_uid(grid,friend_uid,indexes_of_placed_contacts);
+		set_value_in_grid(grid,index_of_friend, friend_uid);		
+	}
+	return grid;
+}
+
+function get_shifted_grid(grid,lower_bound) {
+
+	var shifted_grid = {};
+	var bounds = find_bounding_indexes(grid);
+	var horizontal_shift = lower_bound[0] - bounds[0][0];
+	var vertical_shift = lower_bound[1] - bounds[0][1];
 	
-	var placed_friends = {};
-	var indexes_of_contacts_without_mutual_friends = [];
-	
-	var friends_array = [];
-	for (var friend_uid_string in user.friends) {
-		friends_array.push(Number(friend_uid_string));
+	for_each_index_in_grid(grid, function(grid_index) {
+		var shifted_index = [grid_index[0] + horizontal_shift
+                             ,grid_index[1] + vertical_shift];
+		var value = get_value_in_grid(grid,grid_index);
+		set_value_in_grid(shifted_grid,shifted_index,value);
+	});
+	return shifted_grid;
+}
+
+function get_lower_bound_for_grid(filled_segment,delta) {
+	if (filled_segment[1][0] - filled_segment[0][0] < filled_segment[1][1]
+			- filled_segment[0][1]) {
+		return [filled_segment[1][0]+delta,filled_segment[0][1]];
+	} else {
+		return [filled_segment[0][0],filled_segment[1][1]+delta];
 	}
 	
-	var sorted_friends = friends_array.sort(function(friend_1,friend_2) {
-		var counter_1 = user.mutual_friends[friend_1] ? user.mutual_friends[friend_1].length : 0;
-		var counter_2 = user.mutual_friends[friend_2] ? user.mutual_friends[friend_2].length : 0;
-		var delta_between_counters = counter_2 - counter_1;
-		return delta_between_counters != 0 ? delta_between_counters : friend_2 - friend_1;
-	});
-	
-	
-	
-	for (var uid_index = 0; uid_index < sorted_friends.length; uid_index++) {
-		friend_uid = sorted_friends[uid_index];
-		if (!placed_friends[friend_uid]) {
-			place_friend_in_grid_recursive(grid_of_friends,user,friend_uid
-					,placed_friends,indexes_of_contacts_without_mutual_friends);			
+}
+
+function draw_grid_of_friends(user) {
+
+	var grids = [];
+	var excludes = {};
+	for (var uid_string in user.friends) {
+		var uid = Number(uid_string);
+		if (!excludes[uid]) {
+			excludes[uid] = true;
+			var group = [uid];
+			add_mutual_friends_recursively(user,uid,group,excludes);
+			group.sort(function(friend_1,friend_2) {
+				var counter_1 = user.mutual_friends[friend_1] ? user.mutual_friends[friend_1].length : 0;
+				var counter_2 = user.mutual_friends[friend_2] ? user.mutual_friends[friend_2].length : 0;
+				var delta_between_counters = counter_2 - counter_1;
+				return delta_between_counters != 0 ? delta_between_counters : friend_2 - friend_1;
+			});
+			grids.push(create_grid_of_friends(user,group));
 		}
 	}
-	
-	var bounds = find_bounding_indexes(grid_of_friends);
-	var horizontal_shift = bounds[0][0] < 1 ? -bounds[0][0] + 1 : 0;
-	var vertical_shift = bounds[0][1] < 1 ? -bounds[0][1] + 1: 0;
-	var shifted_grid_of_friends = {};
-	
-	for_each_index_in_grid(grid_of_friends, function(grid_index) {
-		set_value_in_grid(shifted_grid_of_friends,[grid_index[0] + horizontal_shift
-		                                          ,grid_index[1] + vertical_shift]
-							,get_value_in_grid(grid_of_friends,grid_index));
-	});
+	var filled_segment = [[2,2],[2,2]];
 
-    var paper = Raphael("canvas", 606, 500);
-    
+	var paper = Raphael("canvas", 606, 500);
 	
-	for_each_index_in_grid(shifted_grid_of_friends, function(grid_index) {
-		var uid = get_value_in_grid(shifted_grid_of_friends,grid_index);
-		var coordinate = get_coordinate(grid_index);
-		draw_contact_icon(paper,uid,coordinate);
-	});
+	for (var i = 0; i < grids.length; i++) {
+		var grid = grids[i];
+		var lower_bound = get_lower_bound_for_grid(filled_segment,1);
+		
+		var shifted_grid = get_shifted_grid(grid,lower_bound);
+		bounds_of_shifted_grid = find_bounding_indexes(shifted_grid);
+		if (filled_segment[1][0] < bounds_of_shifted_grid[1][0]) {
+			filled_segment[1][0] = bounds_of_shifted_grid[1][0] +1;
+		}  
+		if (filled_segment[1][1] < bounds_of_shifted_grid[1][1]) {
+			filled_segment[1][1] = bounds_of_shifted_grid[1][1] +1;
+		}
+
+		
+		for_each_index_in_grid(shifted_grid, function(grid_index) {
+			var uid = get_value_in_grid(shifted_grid,grid_index);
+			var coordinate = get_coordinate(grid_index);
+			draw_contact_icon(paper,uid,coordinate);
+		});
+		
+		
+	}
 	
 }
 
