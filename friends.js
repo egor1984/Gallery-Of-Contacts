@@ -616,31 +616,38 @@ function draw_grid_of_friends(user) {
 				var delta_between_counters = counter_2 - counter_1;
 				return delta_between_counters != 0 ? delta_between_counters : friend_2 - friend_1;
 			});
-			grids.push(create_grid_of_friends(user,group));
+			grids.push(get_shifted_grid(create_grid_of_friends(user,group),[0,0]));
 		}
 	}
-	var filled_segment = [[2,2],[2,2]];
+	var filled_segment = [[0,0],[0,0]];
 
 	var paper = Raphael("canvas", 606, 500);
 	
 	for (var i = 0; i < grids.length; i++) {
 		var grid = grids[i];
-		var lower_bound = get_lower_bound_for_grid(filled_segment,1);
+		var lower_bound_for_grid = get_lower_bound_for_grid(filled_segment,0.0);
+		var bounds = get_bounds_of_grid(grid);
+		var grid_dimensions = [bounds[1][0] - bounds[0][0]
+								,bounds[1][1] - bounds[0][1]];
+		var upper_bound_for_grid = [lower_bound_for_grid[0] + grid_dimensions[0]
+									,lower_bound_for_grid[1]+ grid_dimensions[1]];
 		
-		var shifted_grid = get_shifted_grid(grid,lower_bound);
-		bounds_of_shifted_grid = find_bounding_indexes(shifted_grid);
-		if (filled_segment[1][0] < bounds_of_shifted_grid[1][0]) {
-			filled_segment[1][0] = bounds_of_shifted_grid[1][0] +1;
+		if (filled_segment[1][0] < upper_bound_for_grid[0]) {
+			filled_segment[1][0] = upper_bound_for_grid[0];
 		}  
-		if (filled_segment[1][1] < bounds_of_shifted_grid[1][1]) {
-			filled_segment[1][1] = bounds_of_shifted_grid[1][1] +1;
+		if (filled_segment[1][1] < upper_bound_for_grid[1]) {
+			filled_segment[1][1] = upper_bound_for_grid[1];
 		}
 
-		
-		for_each_index_in_grid(shifted_grid, function(grid_index) {
-			var uid = get_value_in_grid(shifted_grid,grid_index);
+		var offset = 1/2;
+
+		for_each_index_in_grid(grid, function(grid_index) {
+			var uid = get_value_in_grid(grid,grid_index);
 			var coordinate = get_coordinate(grid_index);
-			draw_contact_icon(paper,uid,coordinate);
+			
+			var shifted_coordinate = [coordinate[0] -bounds[0][0] + lower_bound_for_grid[0]
+										,coordinate[1] -bounds[0][1] + lower_bound_for_grid[1]];
+			draw_contact_icon(paper,uid,shifted_coordinate);
 		});
 		
 		
@@ -1074,6 +1081,33 @@ path += " l " + (delta[index_of_x_axis] - 2*scaled_delta[index_of_x_axis]) + " "
 	}
 	
 	
+	function get_bounds_of_grid(grid) {
+		
+		var bounds = [[Number.POSITIVE_INFINITY,Number.POSITIVE_INFINITY]
+						,[Number.NEGATIVE_INFINITY,Number.NEGATIVE_INFINITY]];
+		
+		var offset = 1/2;
+		
+		for_each_index_in_grid(grid, function(index) {
+			var coordinate = get_coordinate(index);
+			var lower_bound = [coordinate[0]-offset,coordinate[1]-offset];
+			var upper_bound = [coordinate[0]+offset,coordinate[1]+offset];
+			if (lower_bound[0] < bounds[0][0]) {
+				bounds[0][0] = lower_bound[0];
+			}
+			if (lower_bound[1] < bounds[0][1]) {
+				bounds[0][1] = lower_bound[1];
+			}
+			if (upper_bound[0] > bounds[1][0]) {
+				bounds[1][0] = upper_bound[0];
+			}
+			if (upper_bound[1] > bounds[1][1]) {
+				bounds[1][1] = upper_bound[1];
+			}			
+		});
+		return bounds;
+	}
+	
 	function draw_contact_icon(paper,uid,coordinate) {
 		var cell_length = 51.5;
 		var x_offset = (cell_length + 5)*coordinate[0];
@@ -1089,8 +1123,8 @@ path += " l " + (delta[index_of_x_axis] - 2*scaled_delta[index_of_x_axis]) + " "
 			var deltas = calculate_deltas_of_hexagon(cell_length/Math.sqrt(2 + Math.sqrt(3)),Math.PI/12);
 			
 			
-			var path_string = create_path_of_object([x_offset + deltas[4][0]
-													,y_offset + deltas[4][1]], deltas, true);
+			var path_string = create_path_of_object([x_offset + deltas[3][0]
+													,y_offset + deltas[3][1]], deltas, true);
 			var image = paper.path(path_string);
 			
 			
