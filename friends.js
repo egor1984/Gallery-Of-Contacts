@@ -590,9 +590,8 @@ function get_shifted_grid(grid,lower_bound) {
 	return shifted_grid;
 }
 
-function get_lower_bound_for_grid(filled_segment,delta) {
-	if (filled_segment[1][0] - filled_segment[0][0] < filled_segment[1][1]
-			- filled_segment[0][1]) {
+function get_lower_bound_for_grid(filled_segment,dimensions_of_grid,maximum_width,delta) {
+	if (filled_segment[1][0] + dimensions_of_grid[0] < maximum_width) {
 		return [filled_segment[1][0]+delta,filled_segment[0][1]];
 	} else {
 		return [filled_segment[0][0],filled_segment[1][1]+delta];
@@ -620,17 +619,22 @@ function draw_grid_of_friends(user) {
 		}
 	}
 	var filled_segment = [[0,0],[0,0]];
+//	var empty_subsegment = [[0,0],[0,0]];
+	var width_of_window = 606;
 
-	var paper = Raphael("canvas", 606, 500);
+	var paper = Raphael("canvas", width_of_window, 500);
+	var width_of_cell = 51.5;
+	var width_of_border = 5;
 	
 	for (var i = 0; i < grids.length; i++) {
 		var grid = grids[i];
-		var lower_bound_for_grid = get_lower_bound_for_grid(filled_segment,0.0);
 		var bounds = get_bounds_of_grid(grid);
-		var grid_dimensions = [bounds[1][0] - bounds[0][0]
-								,bounds[1][1] - bounds[0][1]];
-		var upper_bound_for_grid = [lower_bound_for_grid[0] + grid_dimensions[0]
-									,lower_bound_for_grid[1]+ grid_dimensions[1]];
+		var dimensions_of_grid = [bounds[1][0] - bounds[0][0]
+		,bounds[1][1] - bounds[0][1]];
+		var lower_bound_for_grid = get_lower_bound_for_grid(filled_segment
+							,dimensions_of_grid,width_of_window/(width_of_cell),0.0);
+		var upper_bound_for_grid = [lower_bound_for_grid[0] + dimensions_of_grid[0]
+									,lower_bound_for_grid[1]+ dimensions_of_grid[1]];
 		
 		if (filled_segment[1][0] < upper_bound_for_grid[0]) {
 			filled_segment[1][0] = upper_bound_for_grid[0];
@@ -647,7 +651,7 @@ function draw_grid_of_friends(user) {
 			
 			var shifted_coordinate = [coordinate[0] -bounds[0][0] + lower_bound_for_grid[0]
 										,coordinate[1] -bounds[0][1] + lower_bound_for_grid[1]];
-			draw_contact_icon(paper,uid,shifted_coordinate);
+			draw_contact_icon(paper,uid,shifted_coordinate, width_of_cell,width_of_border);
 		});
 		
 		
@@ -1108,30 +1112,24 @@ path += " l " + (delta[index_of_x_axis] - 2*scaled_delta[index_of_x_axis]) + " "
 		return bounds;
 	}
 	
-	function draw_contact_icon(paper,uid,coordinate) {
-		var cell_length = 51.5;
-		var x_offset = (cell_length + 5)*coordinate[0];
-		var y_offset = (cell_length + 5)*coordinate[1];
-		
-		
-		var contact = loaded_contacts[uid];
+	function create_contact_icon(paper,contact,width_of_cell,offset) {
 		if (contact && contact.photo) {
 			
 			var sqrt3 = Math.sqrt(3);
 
 			
-			var deltas = calculate_deltas_of_hexagon(cell_length/Math.sqrt(2 + Math.sqrt(3)),Math.PI/12);
+			var deltas = calculate_deltas_of_hexagon(width_of_cell/Math.sqrt(2 + Math.sqrt(3)),Math.PI/12);
 			
 			
-			var path_string = create_path_of_object([x_offset + deltas[3][0]
-													,y_offset + deltas[3][1]], deltas, true);
+			var path_string = create_path_of_object([offset.x + deltas[3][0]
+													,offset.y + deltas[3][1]], deltas, true);
 			var image = paper.path(path_string);
 			
 			
 			
 //			var image = r.rect(node.point[0], node.point[1], 50, 50, 5);
 			image.attr({
-			    fill: "url(" + loaded_contacts[uid].photo + ")",
+			    fill: "url(" + contact.photo + ")",
 			    "stroke-width": 0,
 			    "stroke-opacity":"0",
 			    "cursor" : "pointer"
@@ -1139,22 +1137,37 @@ path += " l " + (delta[index_of_x_axis] - 2*scaled_delta[index_of_x_axis]) + " "
 //			image.attr({"href":get_contact_url(uid),"target":"_top"});
 
 			
-			image.node.onclick = function() {
-				try {
-					parent.window.location = get_contact_url(uid);
-				} catch (exception) {
-//					ie workaround					
-					window.open(get_contact_url(uid));
-				}
-			};
 //            set.push(r.text(node.point[0] + 15, node.point[1] + 41, contact.first_name).attr({"text-anchor":"middle"}));
 //            set.push(r.text(node.point[0] + 15, node.point[1] + 51, contact.last_name).attr({"text-anchor":"middle"}));
+			return image;
 		}
 		else {
 			var color = Raphael.getColor();
-			paper.ellipse(x_offset, y_offset, 20, 15)
-				.attr({fill: color, stroke: color, "stroke-width": 2});
+			return paper.ellipse(offset.x, offset.y, 20, 15)
+				.attr({fill: color, stroke: color, "stroke-width": 2,"cursor" : "pointer"});
 		}
+		
+	}
+	
+	function draw_contact_icon(paper,uid,coordinate,width_of_cell,width_of_border) {
+		var x_offset = (width_of_cell + width_of_border)*coordinate[0];
+		var y_offset = (width_of_cell + width_of_border)*coordinate[1];
+		
+		
+		var contact = loaded_contacts[uid];
+		var icon = create_contact_icon(paper,contact,width_of_cell,{x:x_offset,y:y_offset});
+		
+
+		icon.node.onclick = function() {
+			try {
+				parent.window.location = get_contact_url(uid);
+			} catch (exception) {
+//				ie workaround					
+				window.open(get_contact_url(uid));
+			}
+		};
+	
+	
 	}
 	
 	
