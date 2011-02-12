@@ -623,7 +623,7 @@ function draw_grid_of_friends(user) {
 	var width_of_window = 606;
 
 	var paper = Raphael("canvas", width_of_window, 500);
-	var width_of_cell = 51.5;
+	var width_of_cell = 53.5;
 	var width_of_border = 5;
 	
 	for (var i = 0; i < grids.length; i++) {
@@ -643,7 +643,7 @@ function draw_grid_of_friends(user) {
 			filled_segment[1][1] = upper_bound_for_grid[1];
 		}
 
-		var offset = 1/2;
+//		var offset = 1/2;
 
 		for_each_index_in_grid(grid, function(grid_index) {
 			var uid = get_value_in_grid(grid,grid_index);
@@ -1045,7 +1045,7 @@ function clone_graph_without_node(graph, node_id) {
 			var previous_delta = points[(points.length+point_index - 1)%points.length];			
 			var delta = points[point_index];
 			
-			var distance_from_corner = 4;
+			var distance_from_corner = 9;
 			var previous_scaled_delta = scale_vector(previous_delta, distance_from_corner);
 			var scaled_delta = scale_vector(delta, distance_from_corner);
 			var index_of_x_axis = invert_axis_of_object ? 1 : 0;
