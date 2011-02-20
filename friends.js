@@ -720,6 +720,7 @@ setTimeout( function() {
 
 }, 0);
 
+/*
 	function load_friends_of_contact_recursive(contact,depth_of_friends_retrival,callback) {
 		friends_loader.load( {contact:contact, fields:"uid"}, function(arguments,result_message) {
 			if (result_message == "Success" && contact.friends){
@@ -743,7 +744,7 @@ setTimeout( function() {
 			}
 		});
 	}
-		
+*/		
 		
 		
 function clone_graph_without_node(graph, node_id) {
