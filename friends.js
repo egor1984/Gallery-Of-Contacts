@@ -1,7 +1,5 @@
 
-
 setTimeout( function() {
-	
 }, 500);
 
 function get_contact_url( uid) {
@@ -12,41 +10,41 @@ var vk_loader = new contact_loader();
 
 var friends_get_traits = {
 		"method_name" : "execute"
-		,"arguments_builder" : function(details_requests) {
+		,"parameters_builder" : function(details_requests) {
 			var code = "var ret = [";
 			for (var i = 0; i < details_requests.length; i++) {
 				if (i!=0) {
 					code += ",";
 				}
-				code += "API.friends.get({uid:" + details_requests[i].arguments.contact.uid
+				code += "API.friends.get({uid:" + details_requests[i].parameters.contact.uid
 									+ "})";
 			}
 			code += "]; return ret;";
 			return {api_id:"1918079",code:code,v:"3.0"};			
-		}, "response_handler" : function(arguments,response) {
-			arguments.contact.friends = {};
+		}, "response_handler" : function(parameters,response) {
+			parameters.contact.friends = {};
 			for (var uid_index=0;uid_index<response.length;uid_index++) {
-				arguments.contact.friends[response[uid_index]]=true;
+				parameters.contact.friends[response[uid_index]]=true;
 			}		
 		}
 		,"max_sum" : 24};
 
 var getProfiles_traits = {
 		"method_name" : "getProfiles"
-		,"arguments_builder" : function(details_requests) {
+		,"parameters_builder" : function(details_requests) {
 			var uids = "";
 			for (var i = 0; i < details_requests.length; i++) {
 				if (i!=0) {
 					uids += ",";
 				}
-				uids += details_requests[i].arguments.contact.uid;
+				uids += details_requests[i].parameters.contact.uid;
 			}				
 			return {uids:uids, fields:"uid,first_name,photo"};
 		}
-		,"response_handler" : function(arguments,response) {
+		,"response_handler" : function(parameters,response) {
 			for (var key in response){
 				if (key != "uid") {
-					arguments.contact[key] = response[key];
+					parameters.contact[key] = response[key];
 				}
 			}
 		
@@ -54,43 +52,43 @@ var getProfiles_traits = {
 		,"max_sum" : 240};
 
 
-var friends_getMutual_traits = {"method_name" : "execute", "arguments_builder" : function(details_requests) {
+var friends_getMutual_traits = {"method_name" : "execute", "parameters_builder" : function(details_requests) {
 		var code = "var ret = [";
 		for (var i = 0; i < details_requests.length; i++) {
 			if (i!=0) {
 				code += ",";
 			}
-			code += "API.friends.getMutual({target_uid:" + details_requests[i].arguments.contact_1.uid
-								+ ", source_uid: " + details_requests[i].arguments.contact_2.uid + "})";
+			code += "API.friends.getMutual({target_uid:" + details_requests[i].parameters.contact_1.uid
+								+ ", source_uid: " + details_requests[i].parameters.contact_2.uid + "})";
 		}				
 		code += "]; return ret;";
 		return {api_id:"1918079",code:code,v:"3.0"};			
 	}
-	,"response_handler" : function(arguments,response) {
-	if (!arguments.contact_1.mutual_friends) {
-		arguments.contact_1.mutual_friends = {};
+	,"response_handler" : function(parameters,response) {
+	if (!parameters.contact_1.mutual_friends) {
+		parameters.contact_1.mutual_friends = {};
 	}
-	if (!arguments.contact_2.mutual_friends) {
-		arguments.contact_2.mutual_friends = {};
+	if (!parameters.contact_2.mutual_friends) {
+		parameters.contact_2.mutual_friends = {};
 	}
 	if (response.constructor != Array) {
 		response = [];
 	}
 	for (var uid_index = 0;uid_index < response.length;uid_index++) {
 		var mutual_friend_uid = response[uid_index];
-		if (!arguments.contact_1.mutual_friends[arguments.contact_2.uid]) {
-			arguments.contact_1.mutual_friends[arguments.contact_2.uid] = [];
+		if (!parameters.contact_1.mutual_friends[parameters.contact_2.uid]) {
+			parameters.contact_1.mutual_friends[parameters.contact_2.uid] = [];
 		}
-		if (index_of(arguments.contact_1.mutual_friends[arguments.contact_2.uid]
+		if (index_of(parameters.contact_1.mutual_friends[parameters.contact_2.uid]
 				,mutual_friend_uid) == -1) {
-			arguments.contact_1.mutual_friends[arguments.contact_2.uid].push(mutual_friend_uid);					
+			parameters.contact_1.mutual_friends[parameters.contact_2.uid].push(mutual_friend_uid);					
 		}
-		if (!arguments.contact_1.mutual_friends[mutual_friend_uid]) {
-			arguments.contact_1.mutual_friends[mutual_friend_uid] = [];
+		if (!parameters.contact_1.mutual_friends[mutual_friend_uid]) {
+			parameters.contact_1.mutual_friends[mutual_friend_uid] = [];
 		}
-		if (index_of(arguments.contact_1.mutual_friends[mutual_friend_uid]
-				,arguments.contact_2.uid) == -1) {
-			arguments.contact_1.mutual_friends[mutual_friend_uid].push(arguments.contact_2.uid);					
+		if (index_of(parameters.contact_1.mutual_friends[mutual_friend_uid]
+				,parameters.contact_2.uid) == -1) {
+			parameters.contact_1.mutual_friends[mutual_friend_uid].push(parameters.contact_2.uid);					
 		}
 		
 	}
@@ -109,8 +107,8 @@ function get_app_user_uid()	{
 //return 3469711;
 //return 1895846;
 //return 4430857;
-//return 35050772;
-	return Number(getUrlParameter(window.location.href, "user_id")); 	
+	
+	return Number(getUrlParameter(window.location.href, "user_id")); 
 }
 
 
@@ -437,7 +435,7 @@ function process_output(user) {
 					var contact = loaded_contacts[uid];
 					if (!contact.first_name) {
 						profiles_left_to_load++;
-						profile_loader.load({contact:contact,fields:"uid,first_name,photo"}, function(arguments,result_message){
+						profile_loader.load({contact:contact,fields:"uid,first_name,photo"}, function(parameters,result_message){
 							profiles_left_to_load--;
 							if (profiles_left_to_load == 0) {
 								refreshGroupList(groups);
@@ -466,7 +464,7 @@ function process_output(user) {
 			var contact = loaded_contacts[uid];
 			if (!contact.first_name) {
 				profiles_left_to_load++;
-				vk_loader.load( getProfiles_traits, {contact:contact,fields:"uid,first_name,photo"}, function(arguments,result_message){
+				vk_loader.load( getProfiles_traits, {contact:contact,fields:"uid,first_name,photo"}, function(parameters,result_message){
 					profiles_left_to_load--;
 					if (profiles_left_to_load == 0) {
 						draw_grid_of_friends(user);
@@ -677,7 +675,6 @@ setTimeout( function() {
 	VK.Modules.load('md5', function() {
 	});
 	
-
 	var userContact = {uid:get_app_user_uid()};
 
 	loaded_contacts[userContact.uid] = userContact;
@@ -695,17 +692,18 @@ setTimeout( function() {
 	for (var uid_index=0;uid_index<result.response.length;uid_index++) {
 		userContact.friends[result.response[uid_index]]=true;
 	}
+
 //	load_friends_of_contact_recursive(userContact, 0,function(contact) {
 		
 		var friends_left_to_process = 0;
 		for (var uid in userContact.friends) {
 			friends_left_to_process++;
 			var friend = {uid:Number(uid)};
-			vk_loader.load(friends_getMutual_traits,{contact_1:userContact,contact_2:friend},function(arguments,result_message) {
+			vk_loader.load(friends_getMutual_traits,{contact_1:userContact,contact_2:friend},function(parameters,result_message) {
 				if (result_message == "Success" 
-					&& arguments.contact_2.mutual_friends 
-					&& arguments.contact_2.mutual_friends[arguments.contact_1.uid]){
-					loaded_contacts[arguments.contact_2.uid] = arguments.contact_2;
+					&& parameters.contact_2.mutual_friends 
+					&& parameters.contact_2.mutual_friends[parameters.contact_1.uid]){
+					loaded_contacts[parameters.contact_2.uid] = parameters.contact_2;
 				}
 				friends_left_to_process--;
 				if (friends_left_to_process == 0) {
@@ -722,7 +720,7 @@ setTimeout( function() {
 
 /*
 	function load_friends_of_contact_recursive(contact,depth_of_friends_retrival,callback) {
-		friends_loader.load( {contact:contact, fields:"uid"}, function(arguments,result_message) {
+		friends_loader.load( {contact:contact, fields:"uid"}, function(parameters,result_message) {
 			if (result_message == "Success" && contact.friends){
 				loaded_contacts[contact.uid] = contact;
 			}

@@ -6,11 +6,11 @@ function contact_loader()
 
 	var this_local = this;
 	
-	this.load = function(traits, arguments,callback) {
-		this.queue_request(traits,arguments, callback, 1);
+	this.load = function(traits, parameters,callback) {		
+		this.queue_request(traits,parameters, callback, 1);			
 	};
 
-	this.queue_request = function( traits,arguments, callback,size_factor) {		
+	this.queue_request = function( traits,parameters, callback,size_factor) {		
 /*
 	if (contact.uid == 863449
 		|| contact.uid == 625145
@@ -21,8 +21,9 @@ function contact_loader()
 			return;
 	}
 */	
-		this.queue.push( { traits:traits,arguments:arguments, 
-							done: false, on_done:callback,size_factor:size_factor});
+		var request = { traits:traits,parameters:parameters, 
+							done: false, on_done:callback,size_factor:size_factor}
+		this.queue.push( request);
 		if (!this.timeout_id) {
 			this.timeout_id = window.setTimeout(this.process_sheduled_task, 0);
 		}
@@ -71,11 +72,11 @@ function contact_loader()
 					details_request.done = true;
 					var new_size_factor = details_request.size_factor*2;
 					if (new_size_factor > details_request.traits.max_sum) {
-						details_request.on_done(details_request.arguments,"Request timeout");				
+						details_request.on_done(details_request.parameters,"Request timeout");				
 					}
 					else
 					{
-						this_local.queue_request(details_request.traits, details_request.arguments
+						this_local.queue_request(details_request.traits, details_request.parameters
 											,details_request.on_done,new_size_factor);
 					}
 				}
@@ -83,7 +84,7 @@ function contact_loader()
 		}, 10500);
 	
 		var traits = details_requests[0].traits;
-		VK.api(traits.method_name, traits.arguments_builder(details_requests) , function(data) { 
+		VK.api(traits.method_name, traits.parameters_builder(details_requests) , function(data) { 
 			if (data.error && data.error.error_msg == "Runtime error: Run-time error: Too many API calls\n") {
 				alert(data.error.error_msg);
 			}
@@ -96,21 +97,21 @@ function contact_loader()
 				details_requests[i].done = true;
 				if (data.error) {
 					if (data.error.error_msg == "Too many requests per second") {
-						this_local.queue_request(details_requests[i].traits, details_requests[i].arguments
+						this_local.queue_request(details_requests[i].traits, details_requests[i].parameters
 												, details_requests[i].on_done,details_requests[i].size_factor);
 					}	else {
-						details_requests[i].on_done( details_requests[i].arguments,data.error.error_msg);
+						details_requests[i].on_done( details_requests[i].parameters,data.error.error_msg);
 					}
 				} else {
 					var details_request = details_requests[i];
 					var response = data.response[i];
 					if (response == false) {
-						details_request.on_done(details_request.arguments, "Failure");
+						details_request.on_done(details_request.parameters, "Failure");
 						continue;
-					}					
-					traits.response_handler(details_request.arguments,response);
+					}															
+					traits.response_handler(details_request.parameters,response);					
 					
-					details_request.on_done(details_request.arguments, "Success");
+					details_request.on_done(details_request.parameters, "Success");
 				}
 				
 			}
