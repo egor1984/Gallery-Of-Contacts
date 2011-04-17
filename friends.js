@@ -8,6 +8,7 @@ function get_contact_url( uid) {
 
 var vk_loader = new contact_loader();
 
+/*
 var friends_get_traits = {
 		"method_name" : "execute"
 		,"parameters_builder" : function(details_requests) {
@@ -28,7 +29,7 @@ var friends_get_traits = {
 			}		
 		}
 		,"max_sum" : 24};
-
+*/
 var getProfiles_traits = {
 		"method_name" : "getProfiles"
 		,"parameters_builder" : function(details_requests) {
