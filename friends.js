@@ -622,7 +622,7 @@ function draw_grid_of_friends(user) {
 //	var empty_subsegment = [[0,0],[0,0]];
 	var width_of_window = 606;
 
-	var paper = Raphael("canvas", width_of_window, 500);
+	var paper = Raphael("canvas", width_of_window, 900);
 	var width_of_cell = 53.5;
 	var width_of_border = 5;
 	

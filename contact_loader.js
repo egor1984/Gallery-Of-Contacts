@@ -1,3 +1,28 @@
+function get_request_key(traits, parameters) 
+{
+	var key = ""; 	
+		
+	switch (traits.method_name) {
+	case "getProfiles":
+		key += traits.method_name + ",";
+		key += parameters.contact.uid;
+		break;
+
+	case "execute":
+		key += "friends.getMutual,";
+		key += parameters.contact_1.uid + "," + parameters.contact_2.uid;
+		break;
+	default:
+		alert("unsupported: traits.method_name == " + traits.method_name);
+		break;
+	}
+	
+	
+	
+	return key;
+}
+
+
 function contact_loader()
 {
 	this.timeout_id = undefined;
@@ -5,11 +30,30 @@ function contact_loader()
 	this.queue = new Array();
 
 	var this_local = this;
-	
-	this.load = function(traits, parameters,callback) {		
-		this.queue_request(traits,parameters, callback, 1);			
-	};
 
+	this.load = function(traits, parameters,callback) {		
+		
+		var key = get_request_key(traits, parameters);
+
+		var response = localStorage.getItem(key);
+		if (response != null) {
+			traits.response_handler(parameters,JSON.parse(response));
+			setTimeout(function() {
+				callback(parameters, "Success");				
+			},0);				
+			setTimeout(function() {
+				if (!this_local.timeout_id) {
+					this_local.timeout_id = window.setTimeout(this_local.process_sheduled_task, 100);
+				}
+				this_local.queue_request(traits,parameters, function(parameters, message) {				
+				}, 1);
+			}, 1600);
+				
+		} else {
+			this.queue_request(traits,parameters, callback, 1);			
+		}
+	};
+	
 	this.queue_request = function( traits,parameters, callback,size_factor) {		
 /*
 	if (contact.uid == 863449
@@ -105,12 +149,15 @@ function contact_loader()
 				} else {
 					var details_request = details_requests[i];
 					var response = data.response[i];
+					
+					var key = get_request_key(traits, details_request.parameters);
+					localStorage.setItem(key,JSON.stringify(response));
+					
 					if (response == false) {
 						details_request.on_done(details_request.parameters, "Failure");
 						continue;
-					}															
-					traits.response_handler(details_request.parameters,response);					
-					
+					}					
+					traits.response_handler(details_request.parameters,response);										
 					details_request.on_done(details_request.parameters, "Success");
 				}
 				
