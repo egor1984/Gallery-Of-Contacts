@@ -66,34 +66,35 @@ var friends_getMutual_traits = {"method_name" : "execute", "parameters_builder" 
 		return {api_id:"1918079",code:code,v:"3.0"};			
 	}
 	,"response_handler" : function(parameters,response) {
-	if (!parameters.contact_1.mutual_friends) {
-		parameters.contact_1.mutual_friends = {};
-	}
-	if (!parameters.contact_2.mutual_friends) {
-		parameters.contact_2.mutual_friends = {};
-	}
-	if (response.constructor != Array) {
-		response = [];
-	}
-	for (var uid_index = 0;uid_index < response.length;uid_index++) {
-		var mutual_friend_uid = response[uid_index];
-		if (!parameters.contact_1.mutual_friends[parameters.contact_2.uid]) {
-			parameters.contact_1.mutual_friends[parameters.contact_2.uid] = [];
+		if (!parameters.contact_1.mutual_friends) {
+			parameters.contact_1.mutual_friends = {};
 		}
-		if (index_of(parameters.contact_1.mutual_friends[parameters.contact_2.uid]
-				,mutual_friend_uid) == -1) {
-			parameters.contact_1.mutual_friends[parameters.contact_2.uid].push(mutual_friend_uid);					
+		if (!parameters.contact_2.mutual_friends) {
+			parameters.contact_2.mutual_friends = {};
 		}
-		if (!parameters.contact_1.mutual_friends[mutual_friend_uid]) {
-			parameters.contact_1.mutual_friends[mutual_friend_uid] = [];
+		if (response.constructor != Array) {
+			response = [];
 		}
-		if (index_of(parameters.contact_1.mutual_friends[mutual_friend_uid]
-				,parameters.contact_2.uid) == -1) {
-			parameters.contact_1.mutual_friends[mutual_friend_uid].push(parameters.contact_2.uid);					
+		for (var uid_index = 0;uid_index < response.length;uid_index++) {
+			var mutual_friend_uid = response[uid_index];
+			if (!parameters.contact_1.mutual_friends[parameters.contact_2.uid]) {
+				parameters.contact_1.mutual_friends[parameters.contact_2.uid] = [];
+			}
+			if (index_of(parameters.contact_1.mutual_friends[parameters.contact_2.uid]
+					,mutual_friend_uid) == -1) {
+				parameters.contact_1.mutual_friends[parameters.contact_2.uid].push(mutual_friend_uid);					
+			}
+			if (!parameters.contact_1.mutual_friends[mutual_friend_uid]) {
+				parameters.contact_1.mutual_friends[mutual_friend_uid] = [];
+			}
+			if (index_of(parameters.contact_1.mutual_friends[mutual_friend_uid]
+					,parameters.contact_2.uid) == -1) {
+				parameters.contact_1.mutual_friends[mutual_friend_uid].push(parameters.contact_2.uid);					
+			}
+			
 		}
-		
 	}
-},"max_sum" : 25};
+	,"max_sum" : 25};
 
 
 var call_counter = 0;
