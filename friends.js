@@ -590,13 +590,98 @@ function get_shifted_grid(grid,lower_bound) {
 	return shifted_grid;
 }
 
-function get_lower_bound_for_grid(filled_segment,dimensions_of_grid,maximum_width,delta) {
+
+function point_is_in_bounds(point, bounds) {
+	return point[0] > bounds[0][0] && point[0] < bounds[1][0] 
+			&& point[1] > bounds[0][1] && point[1] < bounds[1][1];
+}
+
+function point_is_in_area(point, area) {
+	for (var i=0; i < area.length; i++) {
+		if (point_is_in_bounds(point, area[i])) {
+			return true;
+		}
+	}
+	return false;
+}
+
+function get_bounds_of_area(area) {
+	var area_bounds = [[0,0],[0,0]];
+	for (var i = 0; i < area.length; i++) {
+		var bounds = area[i];
+
+		if (bounds[0][0] < area_bounds[0][0]) {
+			area_bounds[0][0] = bounds[0][0];
+		}
+		if (bounds[0][1] < area_bounds[0][1]) {
+			area_bounds[0][1] = bounds[0][1];
+		}
+		if (bounds[1][0] > area_bounds[1][0]) {
+			area_bounds[1][0] = bounds[1][0];
+		}
+		if (bounds[1][1] > area_bounds[1][1]) {
+			area_bounds[1][1] = bounds[1][1];
+		}
+	}
+	return area_bounds;
+}
+
+function get_lower_bound_for_grid(grids_positions,dimensions_of_grid,maximum_width,delta) {
+/*	
+	if (grids_positions.length == 0) {
+		return [delta,delta];
+	}
+*/	
+	for (var i = 0; i < grids_positions.length; i++) {
+		var lower_bound = [grids_positions[i][1][0] + delta, grids_positions[i][0][1]];
+		var middle_point = [lower_bound[0] + dimensions_of_grid[0]/2, lower_bound[1] + dimensions_of_grid[1]/2];
+		var upper_bound = [lower_bound[0] + dimensions_of_grid[0], lower_bound[1] + dimensions_of_grid[1]];
+		if (upper_bound[0] + 1.0 <= maximum_width) {
+			if (!point_is_in_area(lower_bound, grids_positions)
+					&& !point_is_in_area(middle_point, grids_positions)
+					&& !point_is_in_area(upper_bound, grids_positions)) {
+				return lower_bound;
+			}
+		}
+	}
+
+	for (var i = 0; i < grids_positions.length; i++) {
+		var lower_bound = [grids_positions[i][0][0], grids_positions[i][1][1] + delta];
+		var middle_point = [lower_bound[0] + dimensions_of_grid[0]/2, lower_bound[1] + dimensions_of_grid[1]/2];
+		var upper_bound = [lower_bound[0] + dimensions_of_grid[0], lower_bound[1] + dimensions_of_grid[1]];
+		if (upper_bound[0] + 1.0 <= maximum_width) {
+			if (!point_is_in_area(lower_bound, grids_positions)
+					&& !point_is_in_area(middle_point, grids_positions)
+					&& !point_is_in_area(upper_bound, grids_positions)) {
+				return lower_bound;
+			}
+		}
+	}
+	
+	for (var i = 0; i < grids_positions.length; i++) {
+		var lower_bound = [grids_positions[i][1][0] + delta, grids_positions[i][1][1] + delta];
+		var middle_point = [lower_bound[0] + dimensions_of_grid[0]/2, lower_bound[1] + dimensions_of_grid[1]/2];
+		var upper_bound = [lower_bound[0] + dimensions_of_grid[0], lower_bound[1] + dimensions_of_grid[1]];
+		if (upper_bound[0] + 1.0 <= maximum_width) {
+			if (!point_is_in_area(lower_bound, grids_positions)
+					&& !point_is_in_area(middle_point, grids_positions)
+					&& !point_is_in_area(upper_bound, grids_positions)) {
+				return lower_bound;
+			}
+		}
+	}
+
+	
+	return [get_bounds_of_area(grids_positions)[1][0] + delta
+	        ,get_bounds_of_area(grids_positions)[1][1] + delta];
+	
+/*	
 	if (filled_segment[1][0] + dimensions_of_grid[0] < maximum_width) {
 		return [filled_segment[1][0]+delta,filled_segment[0][1]];
 	} else {
 		return [filled_segment[0][0],filled_segment[1][1]+delta];
 	}
-	
+*/	
 }
 
 function draw_grid_of_friends(user) {
@@ -618,7 +703,7 @@ function draw_grid_of_friends(user) {
 			grids.push(get_shifted_grid(create_grid_of_friends(user,group),[0,0]));
 		}
 	}
-	var filled_segment = [[0,0],[0,0]];
+//	var filled_segment = [[0,0],[0,0]];
 //	var empty_subsegment = [[0,0],[0,0]];
 	var width_of_window = 606;
 
@@ -626,23 +711,27 @@ function draw_grid_of_friends(user) {
 	var width_of_cell = 53.5;
 	var width_of_border = 5;
 	
+	var grids_positions = [];
+	
+	
 	for (var i = 0; i < grids.length; i++) {
 		var grid = grids[i];
 		var bounds = get_bounds_of_grid(grid);
 		var dimensions_of_grid = [bounds[1][0] - bounds[0][0]
 		,bounds[1][1] - bounds[0][1]];
-		var lower_bound_for_grid = get_lower_bound_for_grid(filled_segment
-							,dimensions_of_grid,width_of_window/(width_of_cell),0.0);
+		var lower_bound_for_grid = get_lower_bound_for_grid(grids_positions
+							,dimensions_of_grid,width_of_window/(width_of_cell),0.1);
 		var upper_bound_for_grid = [lower_bound_for_grid[0] + dimensions_of_grid[0]
 									,lower_bound_for_grid[1]+ dimensions_of_grid[1]];
-		
+		grids_positions.push([lower_bound_for_grid, upper_bound_for_grid]);
+/*		
 		if (filled_segment[1][0] < upper_bound_for_grid[0]) {
 			filled_segment[1][0] = upper_bound_for_grid[0];
 		}  
 		if (filled_segment[1][1] < upper_bound_for_grid[1]) {
 			filled_segment[1][1] = upper_bound_for_grid[1];
 		}
-
+*/
 //		var offset = 1/2;
 
 		for_each_index_in_grid(grid, function(grid_index) {
