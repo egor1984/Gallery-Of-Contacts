@@ -8,28 +8,6 @@ function get_contact_url( uid) {
 
 var vk_loader = new contact_loader();
 
-/*
-var friends_get_traits = {
-		"method_name" : "execute"
-		,"parameters_builder" : function(details_requests) {
-			var code = "var ret = [";
-			for (var i = 0; i < details_requests.length; i++) {
-				if (i!=0) {
-					code += ",";
-				}
-				code += "API.friends.get({uid:" + details_requests[i].parameters.contact.uid
-									+ "})";
-			}
-			code += "]; return ret;";
-			return {api_id:"1918079",code:code,v:"3.0"};			
-		}, "response_handler" : function(parameters,response) {
-			parameters.contact.friends = {};
-			for (var uid_index=0;uid_index<response.length;uid_index++) {
-				parameters.contact.friends[response[uid_index]]=true;
-			}		
-		}
-		,"max_sum" : 24};
-*/
 var getProfiles_traits = {
 		"method_name" : "getProfiles"
 		,"parameters_builder" : function(details_requests) {
@@ -372,87 +350,6 @@ function get_common_uids(groups,group_indexes) {
 
 
 function process_output(user) {
- /*
-	var iteration_list = new Array();
-	if (user.friends) {
-		iteration_list.push(user);
-		for (var uid in user.friends) {
-			var friend = loaded_contacts[uid];
-			if (friend && friend.friends
-				&& indexOf(iteration_list,function(contact) { return contact.uid == friend.uid;})
-				== -1) {
-				iteration_list.push(friend);
-				for (var uid_2 in friend.friends) {
-					var friend_of_friend = loaded_contacts[uid_2];
-					if (friend_of_friend && friend_of_friend.friends
-					&& indexOf(iteration_list,function(contact) { return contact.uid == friend_of_friend.uid;})
-					== -1) {
-						iteration_list.push(friend_of_friend);
-					}
-				}
-			}
-		}
-		iteration_list.sort(function(contact1,contact2) { return contact1.uid - contact2.uid;});
-	}
-*/
-/*
-	var extended_contacts = new Array();
-	var unloaded_extended_uids = new Array();
-	for (var i = 0; i<groups_3.length;i++) {
-		for (var j = 0;j<groups_3[i].uids.length;j++) {
-			var uid = groups_3[i].uids[j];
-			var member = loaded_contacts[uid];
-			if (member && member.friends) {
-				if (indexOf(extended_contacts,function(contact) { return contact.uid == member.uid;})
-					== -1) {
-					extended_contacts.push(member);
-				}
-			} else {
-				if (indexOf(unloaded_extended_uids,function(unloaded_uid) { return unloaded_uid == uid;})
-					== -1) {
-					unloaded_extended_uids.push(uid);
-				}
-			}
-		}
-	}
-
-	var counter = 0;
-	for (var i = 0; i < unloaded_extended_uids.length; i++) {
-		var contact = {uid:Number(unloaded_extended_uids[i])};
-		load_friends_of_contact_recursive(contact,0, function(contact) {
-			if (contact.friends) {
-				extended_contacts.push(contact);
-			}
-			counter++;
-			if ( counter == unloaded_extended_uids.length) {
-				var groups_3_2nd = find_triples(extended_contacts,false);
-				var groups = merge_groups(4,11,groups_3_2nd);
-			
-				var uids = get_distinct_uids(groups);
-				var profiles_left_to_load = 0;
-				for (var uid in uids){
-					if (!loaded_contacts[uid]) {
-						loaded_contacts[uid] = {uid:uid};
-					}
-					var contact = loaded_contacts[uid];
-					if (!contact.first_name) {
-						profiles_left_to_load++;
-						profile_loader.load({contact:contact,fields:"uid,first_name,photo"}, function(parameters,result_message){
-							profiles_left_to_load--;
-							if (profiles_left_to_load == 0) {
-								refreshGroupList(groups);
-							}
-						});
-					}
-							
-				}
-			}
-				
-				
-		}); 
-		
-	}
-*/
 	if (user.mutual_friends) {
 		var groups_3 = find_triples(user);
 		var groups = merge_groups(user, 4,11,groups_3);
@@ -470,7 +367,6 @@ function process_output(user) {
 					profiles_left_to_load--;
 					if (profiles_left_to_load == 0) {
 						draw_grid_of_friends(user);
-//						refreshGroupList(groups);
 					}
 				});
 			}
@@ -724,15 +620,6 @@ function draw_grid_of_friends(user) {
 		var upper_bound_for_grid = [lower_bound_for_grid[0] + dimensions_of_grid[0]
 									,lower_bound_for_grid[1]+ dimensions_of_grid[1]];
 		grids_positions.push([lower_bound_for_grid, upper_bound_for_grid]);
-/*		
-		if (filled_segment[1][0] < upper_bound_for_grid[0]) {
-			filled_segment[1][0] = upper_bound_for_grid[0];
-		}  
-		if (filled_segment[1][1] < upper_bound_for_grid[1]) {
-			filled_segment[1][1] = upper_bound_for_grid[1];
-		}
-*/
-//		var offset = 1/2;
 
 		for_each_index_in_grid(grid, function(grid_index) {
 			var uid = get_value_in_grid(grid,grid_index);
@@ -809,31 +696,6 @@ setTimeout( function() {
 
 }, 0);
 
-/*
-	function load_friends_of_contact_recursive(contact,depth_of_friends_retrival,callback) {
-		friends_loader.load( {contact:contact, fields:"uid"}, function(parameters,result_message) {
-			if (result_message == "Success" && contact.friends){
-				loaded_contacts[contact.uid] = contact;
-			}
-
-			if (result_message != "Success" || !contact.friends || depth_of_friends_retrival == 0) {
-				callback(contact);
-				return;
-			}
-			var friends_details_left_to_load = 0;
-			for (var uid in contact.friends) {
-				friends_details_left_to_load++;
-				var friend = {uid:Number(uid)};
-				load_friends_of_contact_recursive(friend,depth_of_friends_retrival - 1,function(friend) {
-					friends_details_left_to_load--;
-					if (friends_details_left_to_load == 0) {
-						callback(contact);
-					}
-				});
-			}
-		});
-	}
-*/		
 		
 		
 function clone_graph_without_node(graph, node_id) {
@@ -1259,175 +1121,6 @@ path += " l " + (delta[index_of_x_axis] - 2*scaled_delta[index_of_x_axis]) + " "
 	
 	
 	}
-	
-	
-	function add_contact_to_graph(graph,uid,coordinate) {
-
-		var renderer = function(r,node) {
-			var contact = loaded_contacts[node.id];
-			var set = r.set();
-			if (contact && loaded_contacts[node.id].photo) {
-				
-				var sqrt3 = Math.sqrt(3);
-
-				var deltas = calculate_deltas_of_hexagon(51.5/Math.sqrt(2 + Math.sqrt(3)),Math.PI/12);
-				
-				
-				var path_string = create_path_of_object([node.point[0],node.point[1]], deltas, true);
-				var image = r.path(path_string);
-				
-				
-				
-//				var image = r.rect(node.point[0], node.point[1], 50, 50, 5);
-				image.attr({
-				    fill: "url(" + loaded_contacts[node.id].photo + ")",
-				    "stroke-width": 0,
-				    "stroke-opacity":"0"
-				});
-				set.push(image
-//						.attr({"href":get_contact_url(node.id),"target":"_top"})
-				);
-				
-//				image.node.onclick = function() {
-//					parent.window.location = get_contact_url(node.id); 
-//ie workaround					
-//					window.open(get_contact_url(node.id));
-//				}
-//	            set.push(r.text(node.point[0] + 15, node.point[1] + 41, contact.first_name).attr({"text-anchor":"middle"}));
-//	            set.push(r.text(node.point[0] + 15, node.point[1] + 51, contact.last_name).attr({"text-anchor":"middle"}));
-			}
-			else {
-				set.push(r.ellipse(node.point[0], node.point[1], 20, 15).attr({fill: color, stroke: color, "stroke-width": 2}));
-			}
-			return set;
-		};
 		
-		var app_user = loaded_contacts[get_app_user_uid()];
-		
-		var contact = loaded_contacts[uid];
-		var contact_label = contact && contact.first_name ? contact.first_name : uid;
-//		var contact_text_color = app_user.friends[uid] ? "#4cbf9c" : "#aaaaaa";
-		graph.addNode(uid,{render:renderer, label:contact_label
-							, layoutPosX: coordinate[0], layoutPosY : coordinate[1]});		
-	}
-	
-	function draw_social_graph(groups) {
-
-
-		var graph = new Graph();
-		
-		var edges_counter = {};
-		var line_counter = 0;
-		
-		
-		
-		for (var group_index = 0; group_index < groups.length;group_index++) {			
-			var group = groups[group_index];
-			var path = find_path(groups,edges_counter,group.uids);
-			for (var path_index=0;path_index<path.length;path_index++) {
-				var uid_1 = path[path_index];
-				var uid_2 = path[(path_index + 1)%path.length];
-				if (uid_1 > uid_2) {
-					var tmp = uid_1;
-					uid_1 = uid_2;
-					uid_2 = tmp;
-				}
-
-				add_contact_to_graph(graph,uid_1,[0,0]);
-				add_contact_to_graph(graph,uid_2,[0,0]);
-
-					if (edges_counter[[uid_1,uid_2]]) {
-						edges_counter[[uid_1,uid_2]].push(group_index);
-						edges_counter[[uid_2,uid_1]].push(group_index);
-					} else {
-						edges_counter[[uid_1,uid_2]] = [group_index];
-						edges_counter[[uid_2,uid_1]] = [group_index];
-						line_counter++;
-					};
-					var color_number = ((group_index%4 +1)*63 + (div(group_index,4)%4 + 1)*256*63 + (div(group_index,16)%4 + 1)*256*256*63);
-					var edge_counter = edges_counter[[uid_1,uid_2]];
-					var edge_label = new String(edge_counter);
-					graph.addEdge(uid_1, uid_2,{ fill : "#" + color_number.toString(16) + "|" + new String(edge_counter.length*2 + 1)
-//					, label:edge_counter
-					});
-			}
-		}
-		/* layout the graph using the Spring layout implementation */
-		var layouter = new Graph.Layout.Spring(graph);
-		layouter.layout();
-		 
-		
-//		graph.edges.splice(0,graph.edges.length);
-		/* draw the graph using the RaphaelJS draw implementation */
-		var renderer = new Graph.Renderer.Raphael('canvas', graph, 606, 500);
-		renderer.draw();
-	}
-	
-	function refreshGroupList(groups) {
-
-		var groups_to_draw = [];
-		for (var group_index = 0; group_index < groups.length;group_index++) {			
-			var group = groups[group_index];
-			var index_of_user_uid = index_of(group.uids,get_app_user_uid()); 
-			if (index_of_user_uid != -1) {
-				var group_to_draw = new Object({uids:group.uids.concat()
-					,used_in_merged:group.used_in_merged});
-//				group_to_draw.uids.splice(index_of_user_uid,1);
-				groups_to_draw.push(group_to_draw);
-			}
-		}
-		
-		draw_social_graph(groups_to_draw);
-		
-		
-	}
-
-	function clearContactDetailsList() {
-		var table = document.getElementById("results");
-		while (table.firstChild != null) {
-			table.removeChild(table.firstChild);
-		}
-	}
-
-	function addContactToTable(contact) {
-		var table = document.getElementById("results");
-		var contactDiv = document.createElement("div");
-		table.appendChild(contactDiv);
-		var contactInnerDiv = document.createElement("div");
-		contactInnerDiv.setAttribute("class", "result clearFix");
-		contactDiv.appendChild(contactInnerDiv);
-		var contactTable = document.createElement("table");
-		contactInnerDiv.appendChild(contactTable);
-		var contactTableTbody = document.createElement("tbody");
-		contactTable.appendChild(contactTableTbody);
-		var contactTableTr = document.createElement("tr");
-		contactTableTbody.appendChild(contactTableTr);
-		var contactTableTd = document.createElement("td");
-		contactTableTd.setAttribute("width", 100);
-		contactTableTr.appendChild(contactTableTd);
-		var contactImageDiv = document.createElement("div");
-		contactTableTd.appendChild(contactImageDiv);
-		var contactImageAnchor = document.createElement("a");
-		
-		contactImageAnchor.setAttribute("href", get_contact_url(contact.uid));
-		contactImageDiv.appendChild(contactImageAnchor);
-		var contactImage = document.createElement("img");
-		contactImage.setAttribute("src", contact.photo);
-		contactImage.setAttribute("alt", "no photo	");
-		contactImageAnchor.appendChild(contactImage);
-	}
-
-	
-	function setContactDetailsList( uids) {
-		clearContactDetailsList();
-		for (var uid_index = 0; uid_index < uids.length; uid_index++) {
-			var uid = uids[uid_index];
-			if (loaded_contacts[uid]) {
-				addContactToTable(loaded_contacts[uid]);
-			} else {
-				addContactToTable({uid:Number(uid),photo:""});
-			}
-		}
-	}
 	
 
