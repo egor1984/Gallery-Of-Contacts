@@ -525,11 +525,6 @@ function get_bounds_of_area(area) {
 }
 
 function get_lower_bound_for_grid(grids_positions,dimensions_of_grid,maximum_width,delta) {
-/*	
-	if (grids_positions.length == 0) {
-		return [delta,delta];
-	}
-*/	
 	for (var i = 0; i < grids_positions.length; i++) {
 		var lower_bound = [grids_positions[i][1][0] + delta, grids_positions[i][0][1]];
 		var middle_point = [lower_bound[0] + dimensions_of_grid[0]/2, lower_bound[1] + dimensions_of_grid[1]/2];
@@ -573,13 +568,6 @@ function get_lower_bound_for_grid(grids_positions,dimensions_of_grid,maximum_wid
 	return [get_bounds_of_area(grids_positions)[1][0] + delta
 	        ,get_bounds_of_area(grids_positions)[1][1] + delta];
 	
-/*	
-	if (filled_segment[1][0] + dimensions_of_grid[0] < maximum_width) {
-		return [filled_segment[1][0]+delta,filled_segment[0][1]];
-	} else {
-		return [filled_segment[0][0],filled_segment[1][1]+delta];
-	}
-*/	
 }
 
 function draw_grid_of_friends(user) {
@@ -790,45 +778,6 @@ function clone_graph_without_node(graph, node_id) {
 		return {segments_are_changed:false,graph:graph};
 	}
 	
-	function find_path_with_minimum_new_connections(edges_counter,uids) {
-		var graph = form_graph_of_uids_connections(edges_counter,uids);
-		var segments = [];
-		
-		while (true) {
-			var count_of_nodes = 0;
-			for (var id in graph) {
-				count_of_nodes++;
-				break;
-			}
-			if (count_of_nodes == 0) {
-				break;
-			}
-
-			var id_1 = find_node_with_minimum_connections(graph);
-			var node_1 = graph[id_1];
-			if (node_1.connections.length > 0) {
-				var id_2 = node_1.connections[node_1.connections.length - 1];
-				node_1.connections.pop();
-				graph[id_2].connections.splice(index_of(graph[id_2].connections,id_1),1);
-				segments.push([id_1,id_2]);
-				do {
-					 
-					var result = merge_segments_with_same_uid_at_tip(segments,graph);
-					var graph = result.graph;
-				} while (result.segments_are_changed);
-			} else {
-				graph = clone_graph_without_node(graph, id_1);
-			}
-		}
-
-//algorithm may be improved by different merging of segments		
-		var result = [];
-		for (var segment_index = 0;segment_index < segments.length;segment_index++) {
-			result = result.concat(segments[segment_index]);
-		}
-		return result;
-	}
-	
 	function form_graph_of_uids_connections(edges_counter,uids) {
 		var existing_segments = {};
 		for (var uid_index = 0;uid_index < uids.length; uid_index++) {
@@ -845,21 +794,6 @@ function clone_graph_without_node(graph, node_id) {
 		return existing_segments;
 	}
 	
-	
-	
-	function find_path(groups,edges_counter,uids) {
-		var path = find_path_with_minimum_new_connections(edges_counter,uids);
-		
-//algorithm may be improved by checking groups in various order		
-		for (var group_index = 0; group_index <groups.length;group_index++) {
-			var group = groups[group_index];
-			var elements_not_in_path = get_substracted_array(uids,path);
-			var addition_to_path = get_intersected_array(elements_not_in_path,group.uids);
-			path = path.concat(addition_to_path);
-		}
-		return path;
-		
-	}
 
 	
 	function find_bounding_indexes(grid) {
