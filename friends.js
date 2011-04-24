@@ -601,6 +601,17 @@ function draw_grid_of_friends(user) {
 			grids.push(get_shifted_grid(create_grid_of_friends(user,group),[0,0]));
 		}
 	}
+	
+	grids.sort(function(grid_1, grid_2) {
+		var bounds_of_grid_1 = get_bounds_of_grid(grid_1);
+		var dimensions_of_grid_1 = [bounds_of_grid_1[1][0] - bounds_of_grid_1[0][0]
+		,bounds_of_grid_1[1][1] - bounds_of_grid_1[0][1]];
+		var bounds_of_grid_2 = get_bounds_of_grid(grid_2);
+		var dimensions_of_grid_2 = [bounds_of_grid_2[1][0] - bounds_of_grid_2[0][0]
+		,bounds_of_grid_2[1][1] - bounds_of_grid_2[0][1]];
+		return (dimensions_of_grid_2[0]*dimensions_of_grid_2[1] - dimensions_of_grid_1[0]*dimensions_of_grid_1[1]);
+	});
+	
 //	var filled_segment = [[0,0],[0,0]];
 //	var empty_subsegment = [[0,0],[0,0]];
 	var width_of_window = 606;
