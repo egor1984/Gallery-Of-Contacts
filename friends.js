@@ -492,9 +492,11 @@ function point_is_in_bounds(point, bounds) {
 			&& point[1] > bounds[0][1] && point[1] < bounds[1][1];
 }
 
-function point_is_in_area(point, area) {
+function point_is_in_area(point, area, delta) {
 	for (var i=0; i < area.length; i++) {
-		if (point_is_in_bounds(point, area[i])) {
+		var bounds = [[area[i][0][0] - delta, area[i][0][1] - delta]
+						,[area[i][1][0] + delta, area[i][1][1] + delta]];
+		if (point_is_in_bounds(point, bounds)) {
 			return true;
 		}
 	}
@@ -533,9 +535,9 @@ function get_lower_bound_for_grid(grids_positions,dimensions_of_grid,maximum_wid
 		var middle_point = [lower_bound[0] + dimensions_of_grid[0]/2, lower_bound[1] + dimensions_of_grid[1]/2];
 		var upper_bound = [lower_bound[0] + dimensions_of_grid[0], lower_bound[1] + dimensions_of_grid[1]];
 		if (upper_bound[0] + 1.0 <= maximum_width) {
-			if (!point_is_in_area(lower_bound, grids_positions)
-					&& !point_is_in_area(middle_point, grids_positions)
-					&& !point_is_in_area(upper_bound, grids_positions)) {
+			if (!point_is_in_area(lower_bound, grids_positions, delta)
+					&& !point_is_in_area(middle_point, grids_positions, delta)
+					&& !point_is_in_area(upper_bound, grids_positions, delta)) {
 				return lower_bound;
 			}
 		}
@@ -546,9 +548,9 @@ function get_lower_bound_for_grid(grids_positions,dimensions_of_grid,maximum_wid
 		var middle_point = [lower_bound[0] + dimensions_of_grid[0]/2, lower_bound[1] + dimensions_of_grid[1]/2];
 		var upper_bound = [lower_bound[0] + dimensions_of_grid[0], lower_bound[1] + dimensions_of_grid[1]];
 		if (upper_bound[0] + 1.0 <= maximum_width) {
-			if (!point_is_in_area(lower_bound, grids_positions)
-					&& !point_is_in_area(middle_point, grids_positions)
-					&& !point_is_in_area(upper_bound, grids_positions)) {
+			if (!point_is_in_area(lower_bound, grids_positions, delta)
+					&& !point_is_in_area(middle_point, grids_positions, delta)
+					&& !point_is_in_area(upper_bound, grids_positions, delta)) {
 				return lower_bound;
 			}
 		}
@@ -559,9 +561,9 @@ function get_lower_bound_for_grid(grids_positions,dimensions_of_grid,maximum_wid
 		var middle_point = [lower_bound[0] + dimensions_of_grid[0]/2, lower_bound[1] + dimensions_of_grid[1]/2];
 		var upper_bound = [lower_bound[0] + dimensions_of_grid[0], lower_bound[1] + dimensions_of_grid[1]];
 		if (upper_bound[0] + 1.0 <= maximum_width) {
-			if (!point_is_in_area(lower_bound, grids_positions)
-					&& !point_is_in_area(middle_point, grids_positions)
-					&& !point_is_in_area(upper_bound, grids_positions)) {
+			if (!point_is_in_area(lower_bound, grids_positions, delta)
+					&& !point_is_in_area(middle_point, grids_positions, delta)
+					&& !point_is_in_area(upper_bound, grids_positions, delta)) {
 				return lower_bound;
 			}
 		}
