@@ -618,7 +618,7 @@ function draw_grid_of_friends(user) {
 		var dimensions_of_grid = [bounds[1][0] - bounds[0][0]
 		,bounds[1][1] - bounds[0][1]];
 		var lower_bound_for_grid = get_lower_bound_for_grid(grids_positions
-							,dimensions_of_grid,width_of_window/(width_of_cell),0.1);
+							,dimensions_of_grid,width_of_window/(width_of_cell),0.2);
 		var upper_bound_for_grid = [lower_bound_for_grid[0] + dimensions_of_grid[0]
 									,lower_bound_for_grid[1]+ dimensions_of_grid[1]];
 		grids_positions.push([lower_bound_for_grid, upper_bound_for_grid]);
@@ -1160,9 +1160,10 @@ function clone_graph_without_node(graph, node_id) {
 //			var image = r.rect(node.point[0], node.point[1], 50, 50, 5);
 			image.attr({
 			    fill: "url(" + contact.photo + ")",
-			    "stroke-width": 0,
-			    "stroke-opacity":"0",
-			    "cursor" : "pointer"
+			    "cursor" : "pointer",
+			    "stroke" : "#F7F7F7"
+			    	
+			    	
 			});
 //			image.attr({"href":get_contact_url(uid),"target":"_top"});
 
