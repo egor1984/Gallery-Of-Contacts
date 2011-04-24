@@ -604,7 +604,7 @@ function draw_grid_of_friends(user) {
 	var width_of_window = 606;
 
 	var paper = Raphael("canvas", width_of_window, 900);
-	var width_of_cell = 53.5;
+	var width_of_cell = 50;
 	var width_of_border = 5;
 	
 	var grids_positions = [];
@@ -627,7 +627,25 @@ function draw_grid_of_friends(user) {
 			
 			var shifted_coordinate = [coordinate[0] -bounds[0][0] + lower_bound_for_grid[0]
 										,coordinate[1] -bounds[0][1] + lower_bound_for_grid[1]];
-			draw_contact_icon(paper,uid,shifted_coordinate, width_of_cell,width_of_border);
+			
+			var expand_edge = [];
+//			[1,-1],[0,-1],[-1,0],[-1,1],[0,1],[1,0]
+			
+			var shifts_counter_clockwise = [[-1,0],[0,1],[1,1],[1,0],[0,-1],[-1,-1]];
+			
+			for (var shift_index = 0; shift_index < shifts_counter_clockwise.length; shift_index++) {
+				var index_x = grid_index[0] + shifts_counter_clockwise[shift_index][0];
+				var index_y = grid_index[1] + shifts_counter_clockwise[shift_index][1];
+				expand_edge.push(get_value_in_grid(grid, [ index_x, index_y]) == undefined);							
+			}
+/*
+			for (var neighbor_index_y = grid_index[1] + 1; neighbor_index_y >= grid_index[1] - 1; neighbor_index_y--) {				
+				var second_index_x = neighbor_index_y == grid_index[1] ? grid_index[0] + 1 : grid_index[0];   
+				expand_edge.push(get_value_in_grid(grid, [second_index_x, neighbor_index_y]) == undefined);
+				expand_edge.push(get_value_in_grid(grid, [grid_index[0] - 1, neighbor_index_y]) == undefined);
+			}
+*/
+			draw_contact_icon(paper,uid,shifted_coordinate, width_of_cell,width_of_border, expand_edge);
 		});
 		
 		
@@ -885,9 +903,9 @@ function clone_graph_without_node(graph, node_id) {
 		var current_index = index;
 		while (true) {
 			current_index = [current_index[0],current_index[1] + 1];
-			var shifts = [[1,-1],[0,-1],[-1,0],[-1,1],[0,1],[1,0]];
 			var nearest_found_index_in_cycle = current_index;
 
+			var shifts = [[1,-1],[0,-1],[-1,0],[-1,1],[0,1],[1,0]];
 			for (var shift_index = 0; shift_index < shifts.length;shift_index++) {
 				var shift = shifts[shift_index];
 				for (var counter = 0; counter < r; counter++) {
@@ -990,36 +1008,93 @@ function clone_graph_without_node(graph, node_id) {
 		}		
 	}
 	
-	function create_path_of_object(start_point, points, invert_axis_of_object) {
+	function create_path_of_object(start_point, points, invert_axis_of_object, expand_edge, width_of_cell) {
 		var path = "M " + start_point[0] + " " + start_point[1];
 		var angle = 0;
 		for (var point_index = 0; point_index < points.length; point_index++) {
-			var previous_delta = points[(points.length+point_index - 1)%points.length];			
+			var previous_index = (points.length+point_index - 1)%points.length;
+			var next_index = (point_index + 1)%points.length;
+			var previous_delta = points[previous_index];			
 			var delta = points[point_index];
 			
-			var distance_from_corner = 9;
+			var distance_from_corner = 0;
 			var previous_scaled_delta = scale_vector(previous_delta, distance_from_corner);
 			var scaled_delta = scale_vector(delta, distance_from_corner);
 			var index_of_x_axis = invert_axis_of_object ? 1 : 0;
 			var index_of_y_axis = invert_axis_of_object ? 0 : 1;
 			
-			var ellipse_destination = [previous_scaled_delta[index_of_x_axis]
-			                           + scaled_delta[index_of_x_axis]
-			                           ,previous_scaled_delta[index_of_y_axis]
-			                           +scaled_delta[index_of_y_axis]];
+			
+// handling of lower left corner			
+			if (expand_edge[0] && expand_edge[1] && point_index == 1) {
+				var line_width = previous_delta[0] + delta[0];
+				var line_height = previous_delta[1] + delta[1];
+				path += " l " + 0 + " "
+				  + line_height;				
+				path += " l " + line_width + " "
+				  + 0;													
+			}
+			if (expand_edge[0] && expand_edge[1] && (point_index == 0 || point_index == 1)) {
+				continue;
+			}
 
-			var radius = calculate_radius(delta[2], ellipse_destination); 
+			//handling of upper right corner			
+			if (expand_edge[3] && expand_edge[4] && point_index == 4) {
+				var line_width = previous_delta[0] + delta[0];
+				var line_height = previous_delta[1] + delta[1];
+				path += " l " + 0 + " "
+				  + line_height;				
+				path += " l " + line_width + " "
+				  + 0;													
+			}
+			if (expand_edge[3] && expand_edge[4] && (point_index == 3 || point_index == 4)) {
+				continue;
+			}
+			
+			
+			if (!expand_edge[previous_index] || !expand_edge[point_index]) {
+				var ellipse_destination = [0, 0];
+				if (!expand_edge[previous_index]) {
+					ellipse_destination[0] += previous_scaled_delta[index_of_x_axis];
+					ellipse_destination[1] += previous_scaled_delta[index_of_y_axis];
+				}
+				if (!expand_edge[point_index]) {
+					ellipse_destination[0] += scaled_delta[index_of_x_axis];
+					ellipse_destination[1] += scaled_delta[index_of_y_axis];
+				}
+				var radius = calculate_radius(delta[2], ellipse_destination); 
 				
-			var angle = 0;
-			
-			path += " a " + radius + "," + radius
-					+ " " + angle + " 0," + (invert_axis_of_object ? 0 : 1) + " "
-				+ ellipse_destination[0] + "," + ellipse_destination[1];
-					
+				var angle = 0;
+
+				path += " a " + radius + "," + radius
+				+ " " + angle + " 0," + (invert_axis_of_object ? 0 : 1) + " "
+					+ ellipse_destination[0] + "," + ellipse_destination[1];								
+			}
 			
 
-path += " l " + (delta[index_of_x_axis] - 2*scaled_delta[index_of_x_axis]) + " "
-			  + (delta[index_of_y_axis] - 2*scaled_delta[index_of_y_axis]);
+			
+
+			if (expand_edge[point_index]) {
+				var line_width = delta[index_of_x_axis];
+				var line_height = delta[index_of_y_axis];
+				if (point_index == 2 || point_index ==5) {
+					path += " l " + line_width + " "
+					  + 0;				
+					path += " l " + 0 + " "
+					  + line_height;				
+				}
+				else {
+					path += " l " + 0 + " "
+					  + line_height;				
+					path += " l " + line_width + " "
+					  + 0;									
+				}
+			} else {							
+				var line_width = delta[index_of_x_axis] - 2*scaled_delta[index_of_x_axis];
+				var line_height = delta[index_of_y_axis] - 2*scaled_delta[index_of_y_axis]; 
+				path += " l " + line_width + " "
+				  + line_height;				
+			}
+
 		}
 		return path + " z";
 		
@@ -1064,7 +1139,7 @@ path += " l " + (delta[index_of_x_axis] - 2*scaled_delta[index_of_x_axis]) + " "
 		return bounds;
 	}
 	
-	function create_contact_icon(paper,contact,width_of_cell,offset) {
+	function create_contact_icon(paper,contact,width_of_cell,offset, expand_edge) {
 		if (contact && contact.photo) {
 			
 			var sqrt3 = Math.sqrt(3);
@@ -1072,9 +1147,10 @@ path += " l " + (delta[index_of_x_axis] - 2*scaled_delta[index_of_x_axis]) + " "
 			
 			var deltas = calculate_deltas_of_hexagon(width_of_cell/Math.sqrt(2 + Math.sqrt(3)),Math.PI/12);
 			
+
 			
 			var path_string = create_path_of_object([offset.x + deltas[3][0]
-													,offset.y + deltas[3][1]], deltas, true);
+													,offset.y + deltas[3][1]], deltas, true, expand_edge, width_of_cell);
 			var image = paper.path(path_string);
 			
 			
@@ -1101,13 +1177,13 @@ path += " l " + (delta[index_of_x_axis] - 2*scaled_delta[index_of_x_axis]) + " "
 		
 	}
 	
-	function draw_contact_icon(paper,uid,coordinate,width_of_cell,width_of_border) {
+	function draw_contact_icon(paper,uid,coordinate,width_of_cell,width_of_border, expand_edge) {
 		var x_offset = (width_of_cell + width_of_border)*coordinate[0];
 		var y_offset = (width_of_cell + width_of_border)*coordinate[1];
 		
-		
 		var contact = loaded_contacts[uid];
-		var icon = create_contact_icon(paper,contact,width_of_cell,{x:x_offset,y:y_offset});
+
+		var icon = create_contact_icon(paper,contact,width_of_cell,{x:x_offset,y:y_offset}, expand_edge);
 		
 
 		icon.node.onclick = function() {
