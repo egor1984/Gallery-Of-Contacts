@@ -609,12 +609,15 @@ function draw_grid_of_friends(user) {
 //	var empty_subsegment = [[0,0],[0,0]];
 	var width_of_window = 606;
 
-	var paper = Raphael("canvas", width_of_window, 900);
+	var paper = Raphael("canvas", width_of_window, 0);
+	
+
 	var width_of_cell = 50;
 	var width_of_border = 5;
 	
 	var grids_positions = [];
-	
+
+	var maximum_y = 0;
 	
 	for (var i = 0; i < grids.length; i++) {
 		var grid = grids[i];
@@ -652,11 +655,23 @@ function draw_grid_of_friends(user) {
 				expand_edge.push(get_value_in_grid(grid, [grid_index[0] - 1, neighbor_index_y]) == undefined);
 			}
 */
-			draw_contact_icon(paper,uid,shifted_coordinate, width_of_cell,width_of_border, expand_edge);
+			
+			var position = {x:(width_of_cell + width_of_border)*shifted_coordinate[0]
+							, y:(width_of_cell + width_of_border)*shifted_coordinate[1]};
+			
+			draw_contact_icon(paper,uid,position, width_of_cell, expand_edge);
+			if (position.y > maximum_y) {
+				maximum_y = position.y;
+				var height_of_window = maximum_y + width_of_cell;
+				paper.setSize(606, height_of_window);
+			}
 		});
 		
 		
 	}
+	VK.callMethod("resizeWindow", 606, maximum_y + width_of_cell);				
+
+	
 	
 }
 
@@ -1135,13 +1150,11 @@ function clone_graph_without_node(graph, node_id) {
 		
 	}
 	
-	function draw_contact_icon(paper,uid,coordinate,width_of_cell,width_of_border, expand_edge) {
-		var x_offset = (width_of_cell + width_of_border)*coordinate[0];
-		var y_offset = (width_of_cell + width_of_border)*coordinate[1];
+	function draw_contact_icon(paper,uid,position,width_of_cell, expand_edge) {
 		
 		var contact = loaded_contacts[uid];
 
-		var icon = create_contact_icon(paper,contact,width_of_cell,{x:x_offset,y:y_offset}, expand_edge);
+		var icon = create_contact_icon(paper,contact,width_of_cell, position, expand_edge);
 		
 
 		icon.node.onclick = function() {
