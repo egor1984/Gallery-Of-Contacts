@@ -424,15 +424,6 @@ function for_each_index_in_grid(grid,callback) {
 	}
 }
 
-function find_index_for_uid(grid, friend_uid,indexes_of_placed_contacts) {
-	if (indexes_of_placed_contacts.length != 0) {
-		var middle_coordinate = get_middle_coordinate(indexes_of_placed_contacts);
-		return get_nearest_free_index(grid,middle_coordinate);
-	} 
-	else {
-		return get_index_in_free_area(grid, 2);	
-	}
-}
 
 function add_mutual_friends_recursively(user,uid,list,excludes) {
 	var mutual_friends = user.mutual_friends[uid];
@@ -448,7 +439,7 @@ function add_mutual_friends_recursively(user,uid,list,excludes) {
 	}
 }
 
-function create_grid_of_friends(user,group) {
+function create_grid_of_friends(user,group, maximum_width) {
 	var grid = {};
 	for (var i = 0; i < group.length; i++) {
 		var friend_uid = group[i];
@@ -464,7 +455,9 @@ function create_grid_of_friends(user,group) {
 				}						
 			}			
 		}
-		var index_of_friend = find_index_for_uid(grid,friend_uid,indexes_of_placed_contacts);
+
+		var middle_coordinate = get_middle_coordinate(indexes_of_placed_contacts);
+		var index_of_friend = get_nearest_free_index(grid,middle_coordinate, maximum_width);		
 		set_value_in_grid(grid,index_of_friend, friend_uid);		
 	}
 	return grid;
@@ -534,7 +527,7 @@ function get_lower_bound_for_grid(grids_positions,dimensions_of_grid,maximum_wid
 		var lower_bound = [grids_positions[i][1][0] + delta, grids_positions[i][0][1]];
 		var middle_point = [lower_bound[0] + dimensions_of_grid[0]/2, lower_bound[1] + dimensions_of_grid[1]/2];
 		var upper_bound = [lower_bound[0] + dimensions_of_grid[0], lower_bound[1] + dimensions_of_grid[1]];
-		if (upper_bound[0] + 1.0 <= maximum_width) {
+		if (upper_bound[0] <= maximum_width) {
 			if (!point_is_in_area(lower_bound, grids_positions, delta)
 					&& !point_is_in_area(middle_point, grids_positions, delta)
 					&& !point_is_in_area(upper_bound, grids_positions, delta)) {
@@ -547,7 +540,7 @@ function get_lower_bound_for_grid(grids_positions,dimensions_of_grid,maximum_wid
 		var lower_bound = [grids_positions[i][0][0], grids_positions[i][1][1] + delta];
 		var middle_point = [lower_bound[0] + dimensions_of_grid[0]/2, lower_bound[1] + dimensions_of_grid[1]/2];
 		var upper_bound = [lower_bound[0] + dimensions_of_grid[0], lower_bound[1] + dimensions_of_grid[1]];
-		if (upper_bound[0] + 1.0 <= maximum_width) {
+		if (upper_bound[0] <= maximum_width) {
 			if (!point_is_in_area(lower_bound, grids_positions, delta)
 					&& !point_is_in_area(middle_point, grids_positions, delta)
 					&& !point_is_in_area(upper_bound, grids_positions, delta)) {
@@ -560,7 +553,7 @@ function get_lower_bound_for_grid(grids_positions,dimensions_of_grid,maximum_wid
 		var lower_bound = [grids_positions[i][1][0] + delta, grids_positions[i][1][1] + delta];
 		var middle_point = [lower_bound[0] + dimensions_of_grid[0]/2, lower_bound[1] + dimensions_of_grid[1]/2];
 		var upper_bound = [lower_bound[0] + dimensions_of_grid[0], lower_bound[1] + dimensions_of_grid[1]];
-		if (upper_bound[0] + 1.0 <= maximum_width) {
+		if (upper_bound[0] <= maximum_width) {
 			if (!point_is_in_area(lower_bound, grids_positions, delta)
 					&& !point_is_in_area(middle_point, grids_positions, delta)
 					&& !point_is_in_area(upper_bound, grids_positions, delta)) {
@@ -577,6 +570,11 @@ function get_lower_bound_for_grid(grids_positions,dimensions_of_grid,maximum_wid
 
 function draw_grid_of_friends(user) {
 
+	var width_of_window = 606;
+	
+	var width_of_cell = 50;
+	var width_of_border = 5;
+	
 	var grids = [];
 	var excludes = {};
 	for (var uid_string in user.friends) {
@@ -591,7 +589,7 @@ function draw_grid_of_friends(user) {
 				var delta_between_counters = counter_2 - counter_1;
 				return delta_between_counters != 0 ? delta_between_counters : friend_2 - friend_1;
 			});
-			grids.push(get_shifted_grid(create_grid_of_friends(user,group),[0,0]));
+			grids.push(get_shifted_grid(create_grid_of_friends(user,group, width_of_window/(width_of_cell + 1.5*width_of_border)),[0,0]));
 		}
 	}
 	
@@ -607,13 +605,10 @@ function draw_grid_of_friends(user) {
 	
 //	var filled_segment = [[0,0],[0,0]];
 //	var empty_subsegment = [[0,0],[0,0]];
-	var width_of_window = 606;
 
 	var paper = Raphael("canvas", width_of_window, 0);
 	
 
-	var width_of_cell = 50;
-	var width_of_border = 5;
 	
 	var grids_positions = [];
 
@@ -625,7 +620,7 @@ function draw_grid_of_friends(user) {
 		var dimensions_of_grid = [bounds[1][0] - bounds[0][0]
 		,bounds[1][1] - bounds[0][1]];
 		var lower_bound_for_grid = get_lower_bound_for_grid(grids_positions
-							,dimensions_of_grid,width_of_window/(width_of_cell),0.2);
+							,dimensions_of_grid,width_of_window/(width_of_cell + width_of_border),0.2);
 		var upper_bound_for_grid = [lower_bound_for_grid[0] + dimensions_of_grid[0]
 									,lower_bound_for_grid[1]+ dimensions_of_grid[1]];
 		grids_positions.push([lower_bound_for_grid, upper_bound_for_grid]);
@@ -836,34 +831,26 @@ function clone_graph_without_node(graph, node_id) {
 		});
 		return [lower_bound,upper_bound];
 	}
-	
-	function get_index_in_free_area(grid,range) {
-		var bounds = find_bounding_indexes(grid);
-		var lower_bound = bounds[0];
-		var upper_bound = bounds[1];
-		var bounds_size = [upper_bound[0] - lower_bound[0], upper_bound[1] - lower_bound[1]];
-		if (bounds_size[0] < 0
-			&& bounds_size[1] < 0) {
-			return [0,0];
-		}
-		if (bounds_size[0] < bounds_size[1]) {
-			return [Math.round(upper_bound[0] + range), Math.round(lower_bound[1] + bounds_size[1]/2)];
-		} 
-		else {
-			return [Math.round(lower_bound[0] + bounds_size[0]/2),Math.round(upper_bound[1] + range)];
-		}
-	}
-	
+
 	function get_distance(coordinate_1,coordinate_2) {
 		var delta = [coordinate_2[0]-coordinate_1[0]
 					,coordinate_2[1]-coordinate_1[1]];		
 		return Math.sqrt(delta[0]*delta[0] + delta[1]*delta[1]);
 	}
 	
-	function get_nearest_free_index(grid,coordinate) {
+	function index_fits_grid(grid, index, maximum_width) {
+		
+		var bounds_of_area = get_bounds_of_area([get_bounds_of_grid(grid)
+							                       , get_bounds_of_cell(index)]);
+		return !get_value_in_grid(grid,index) 
+			&& bounds_of_area[1][0] - bounds_of_area[0][0] < maximum_width;
+	}
+	
+	function get_nearest_free_index(grid,coordinate, maximum_width) {
 		
 		var index = get_index(coordinate);
-		if (!get_value_in_grid(grid,index)) {
+
+		if (index_fits_grid(grid, index, maximum_width)) {
 			return index;
 		}
 		var r = 1;
@@ -884,7 +871,7 @@ function clone_graph_without_node(graph, node_id) {
 					if (distance_to_current_index < distance_to_nearest_found_index_in_cycle) {
 							nearest_found_index_in_cycle = current_index;							
 						}
-					if (!get_value_in_grid(grid,current_index)) {
+					if (index_fits_grid(grid, current_index, maximum_width)) {
 						if (nearest_found_free_index) {
 							var distance_to_nearest_found_free_index = get_distance(coordinate
 															,get_coordinate(nearest_found_free_index));
@@ -915,6 +902,9 @@ function clone_graph_without_node(graph, node_id) {
 	}
 	
 	function get_middle_coordinate(indexes) {
+		if (indexes.length == 0) {
+			return [0,0];
+		}
 		var accumulator = [0,0];
 		for (var index_of_index = 0; index_of_index < indexes.length; index_of_index++) {
 			var index = indexes[index_of_index];
