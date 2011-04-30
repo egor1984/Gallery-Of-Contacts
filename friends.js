@@ -479,23 +479,6 @@ function get_shifted_grid(grid,lower_bound) {
 	return shifted_grid;
 }
 
-
-function point_is_in_bounds(point, bounds) {
-	return point[0] > bounds[0][0] && point[0] < bounds[1][0] 
-			&& point[1] > bounds[0][1] && point[1] < bounds[1][1];
-}
-
-function point_is_in_area(point, area, delta) {
-	for (var i=0; i < area.length; i++) {
-		var bounds = [[area[i][0][0] - delta, area[i][0][1] - delta]
-						,[area[i][1][0] + delta, area[i][1][1] + delta]];
-		if (point_is_in_bounds(point, bounds)) {
-			return true;
-		}
-	}
-	return false;
-}
-
 function get_bounds_of_area(area) {
 	var area_bounds = [[Number.POSITIVE_INFINITY,Number.POSITIVE_INFINITY] 
 						,[Number.NEGATIVE_INFINITY,Number.NEGATIVE_INFINITY]];
@@ -518,6 +501,27 @@ function get_bounds_of_area(area) {
 	return area_bounds;
 }
 
+function ranges_are_intersected(range_1, range_2) {
+	return range_1[1] >= range_2[0] && range_1[0] < range_2[1];
+}
+
+function bounds_are_intersected(bounds_1, bounds_2) {
+	return ranges_are_intersected([bounds_1[0][0], bounds_1[1][0]], [bounds_2[0][0], bounds_2[1][0]])
+		&& ranges_are_intersected([bounds_1[0][1], bounds_1[1][1]], [bounds_2[0][1], bounds_2[1][1]]);
+}
+
+function bounds_intersect_area(bounds, area, delta) {
+	for (var i=0; i < area.length; i++) {
+		var area_bounds = [[area[i][0][0] - delta, area[i][0][1] - delta]
+						,[area[i][1][0] + delta, area[i][1][1] + delta]];
+		if (bounds_are_intersected(bounds, area_bounds)) {
+			return true;
+		}
+	}
+	return false;	
+}
+
+
 function get_lower_bound_for_grid(grids_positions,dimensions_of_grid,maximum_width,delta) {
 	if (grids_positions.length == 0) {
 		return [delta,delta];
@@ -525,12 +529,9 @@ function get_lower_bound_for_grid(grids_positions,dimensions_of_grid,maximum_wid
 	
 	for (var i = 0; i < grids_positions.length; i++) {
 		var lower_bound = [grids_positions[i][1][0] + delta, grids_positions[i][0][1]];
-		var middle_point = [lower_bound[0] + dimensions_of_grid[0]/2, lower_bound[1] + dimensions_of_grid[1]/2];
 		var upper_bound = [lower_bound[0] + dimensions_of_grid[0], lower_bound[1] + dimensions_of_grid[1]];
 		if (upper_bound[0] <= maximum_width) {
-			if (!point_is_in_area(lower_bound, grids_positions, delta)
-					&& !point_is_in_area(middle_point, grids_positions, delta)
-					&& !point_is_in_area(upper_bound, grids_positions, delta)) {
+			if (!bounds_intersect_area([lower_bound, upper_bound], grids_positions, delta)) {
 				return lower_bound;
 			}
 		}
@@ -538,26 +539,20 @@ function get_lower_bound_for_grid(grids_positions,dimensions_of_grid,maximum_wid
 
 	for (var i = 0; i < grids_positions.length; i++) {
 		var lower_bound = [grids_positions[i][0][0], grids_positions[i][1][1] + delta];
-		var middle_point = [lower_bound[0] + dimensions_of_grid[0]/2, lower_bound[1] + dimensions_of_grid[1]/2];
 		var upper_bound = [lower_bound[0] + dimensions_of_grid[0], lower_bound[1] + dimensions_of_grid[1]];
 		if (upper_bound[0] <= maximum_width) {
-			if (!point_is_in_area(lower_bound, grids_positions, delta)
-					&& !point_is_in_area(middle_point, grids_positions, delta)
-					&& !point_is_in_area(upper_bound, grids_positions, delta)) {
-				return lower_bound;
+			if (!bounds_intersect_area([lower_bound, upper_bound], grids_positions, delta)) {
+				return lower_bound;				
 			}
 		}
 	}
 	
 	for (var i = 0; i < grids_positions.length; i++) {
 		var lower_bound = [grids_positions[i][1][0] + delta, grids_positions[i][1][1] + delta];
-		var middle_point = [lower_bound[0] + dimensions_of_grid[0]/2, lower_bound[1] + dimensions_of_grid[1]/2];
 		var upper_bound = [lower_bound[0] + dimensions_of_grid[0], lower_bound[1] + dimensions_of_grid[1]];
 		if (upper_bound[0] <= maximum_width) {
-			if (!point_is_in_area(lower_bound, grids_positions, delta)
-					&& !point_is_in_area(middle_point, grids_positions, delta)
-					&& !point_is_in_area(upper_bound, grids_positions, delta)) {
-				return lower_bound;
+			if (!bounds_intersect_area([lower_bound, upper_bound], grids_positions, delta)) {
+				return lower_bound;				
 			}
 		}
 	}
@@ -602,9 +597,6 @@ function draw_grid_of_friends(user) {
 		,bounds_of_grid_2[1][1] - bounds_of_grid_2[0][1]];
 		return (dimensions_of_grid_2[0]*dimensions_of_grid_2[1] - dimensions_of_grid_1[0]*dimensions_of_grid_1[1]);
 	});
-	
-//	var filled_segment = [[0,0],[0,0]];
-//	var empty_subsegment = [[0,0],[0,0]];
 
 	var paper = Raphael("canvas", width_of_window, 0);
 	
@@ -634,7 +626,6 @@ function draw_grid_of_friends(user) {
 										,coordinate[1] -bounds[0][1] + lower_bound_for_grid[1]];
 			
 			var expand_edge = [];
-//			[1,-1],[0,-1],[-1,0],[-1,1],[0,1],[1,0]
 			
 			var shifts_counter_clockwise = [[-1,0],[0,1],[1,1],[1,0],[0,-1],[-1,-1]];
 			
@@ -643,13 +634,6 @@ function draw_grid_of_friends(user) {
 				var index_y = grid_index[1] + shifts_counter_clockwise[shift_index][1];
 				expand_edge.push(get_value_in_grid(grid, [ index_x, index_y]) == undefined);							
 			}
-/*
-			for (var neighbor_index_y = grid_index[1] + 1; neighbor_index_y >= grid_index[1] - 1; neighbor_index_y--) {				
-				var second_index_x = neighbor_index_y == grid_index[1] ? grid_index[0] + 1 : grid_index[0];   
-				expand_edge.push(get_value_in_grid(grid, [second_index_x, neighbor_index_y]) == undefined);
-				expand_edge.push(get_value_in_grid(grid, [grid_index[0] - 1, neighbor_index_y]) == undefined);
-			}
-*/
 			
 			var position = {x:(width_of_cell + width_of_border)*shifted_coordinate[0]
 							, y:(width_of_cell + width_of_border)*shifted_coordinate[1]};
