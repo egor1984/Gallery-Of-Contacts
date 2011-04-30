@@ -1105,7 +1105,7 @@ function clone_graph_without_node(graph, node_id) {
 			image.attr({
 			    fill: "url(" + contact.photo + ")",
 			    "cursor" : "pointer",
-			    "stroke" : "#F7F7F7",
+			    "stroke" : "none",
 			    "title"  : contact.first_name + " " + contact.last_name			    				    	
 			});
 			
