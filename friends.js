@@ -18,7 +18,7 @@ var getProfiles_traits = {
 				}
 				uids += details_requests[i].parameters.contact.uid;
 			}				
-			return {uids:uids, fields:"uid,first_name,photo"};
+			return {uids:uids, fields:"uid,first_name,last_name,photo"};
 		}
 		,"response_handler" : function(parameters,response) {
 			for (var key in response){
@@ -363,7 +363,7 @@ function process_output(user) {
 			var contact = loaded_contacts[uid];
 			if (!contact.first_name) {
 				profiles_left_to_load++;
-				vk_loader.load( getProfiles_traits, {contact:contact,fields:"uid,first_name,photo"}, function(parameters,result_message){
+				vk_loader.load( getProfiles_traits, {contact:contact}, function(parameters,result_message){
 					profiles_left_to_load--;
 					if (profiles_left_to_load == 0) {
 						draw_grid_of_friends(user);
@@ -1105,10 +1105,10 @@ function clone_graph_without_node(graph, node_id) {
 			image.attr({
 			    fill: "url(" + contact.photo + ")",
 			    "cursor" : "pointer",
-			    "stroke" : "#F7F7F7"
-			    	
-			    	
+			    "stroke" : "#F7F7F7",
+			    "title"  : contact.first_name + " " + contact.last_name			    				    	
 			});
+			
 //			image.attr({"href":get_contact_url(uid),"target":"_top"});
 
 			
