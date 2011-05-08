@@ -424,6 +424,16 @@ function for_each_index_in_grid(grid,callback) {
 	}
 }
 
+function get_sorted_values_in_grid(grid) {
+	var values = [];
+	for_each_index_in_grid(grid,function(index) {
+		values.push(get_value_in_grid(grid,index));
+	});
+	values.sort(function(index_1,index_2) {
+		return index_2 - index_1;
+	});
+	return values;
+}
 
 function add_mutual_friends_recursively(user,uid,list,excludes) {
 	var mutual_friends = user.mutual_friends[uid];
@@ -595,7 +605,19 @@ function draw_grid_of_friends(user) {
 		var bounds_of_grid_2 = get_bounds_of_grid(grid_2);
 		var dimensions_of_grid_2 = [bounds_of_grid_2[1][0] - bounds_of_grid_2[0][0]
 		,bounds_of_grid_2[1][1] - bounds_of_grid_2[0][1]];
-		return (dimensions_of_grid_2[0]*dimensions_of_grid_2[1] - dimensions_of_grid_1[0]*dimensions_of_grid_1[1]);
+		
+		var difference = dimensions_of_grid_2[0]*dimensions_of_grid_2[1] - dimensions_of_grid_1[0]*dimensions_of_grid_1[1];
+		if (difference != 0) {
+			return difference;
+		} else {
+			var values_1 = get_sorted_values_in_grid(grid_1);
+			var values_2 = get_sorted_values_in_grid(grid_2);
+			while (values_1[values_1.length - 1] == values_2[values_2.length - 1]) {
+				values_1.pop();
+				values_2.pop();
+			}
+			return values_2[values_2.length - 1] - values_1[values_1.length - 1];
+		}
 	});
 
 	var paper = Raphael("canvas", width_of_window, 0);
