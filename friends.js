@@ -972,14 +972,37 @@ function clone_graph_without_node(graph, node_id) {
 		}		
 	}
 	
-	function create_path_of_object(start_point, points, invert_axis_of_object, expand_edge, width_of_cell) {
-		var path = "M " + start_point[0] + " " + start_point[1];
+	function get_path_of_contact_icon(points) {
+		var path = "M " + points[0][0] + " " + points[0][1];
+		for (var point_index = 1; point_index < points.length; point_index++) {
+			path += "L " + points[point_index][0] + " " + points[point_index][1];
+		}
+		path +=" z";
+		return path;
+	}
+	
+	function get_sum_of_vectors(vector_1,vector_2) {
+		var sum = [];
+		for (var index = 0; index < vector_1.length;index++) {
+			sum.push(vector_1[index] + vector_2[index]);
+		}
+		return sum;
+	}
+	
+	function continue_shape(points,offset) {
+		var next_point = get_sum_of_vectors(points[points.length - 1],offset);
+		points.push(next_point);
+	}
+		
+	
+	function create_path_of_object(start_point, deltas, invert_axis_of_object, expand_edge, width_of_cell) {
+		var points = [start_point];
 		var angle = 0;
-		for (var point_index = 0; point_index < points.length; point_index++) {
-			var previous_index = (points.length+point_index - 1)%points.length;
-			var next_index = (point_index + 1)%points.length;
-			var previous_delta = points[previous_index];			
-			var delta = points[point_index];
+		for (var point_index = 0; point_index < deltas.length; point_index++) {
+			var previous_index = (deltas.length+point_index - 1)%deltas.length;
+			var next_index = (point_index + 1)%deltas.length;
+			var previous_delta = deltas[previous_index];			
+			var delta = deltas[point_index];
 			
 			var distance_from_corner = 0;
 			var previous_scaled_delta = scale_vector(previous_delta, distance_from_corner);
@@ -992,10 +1015,8 @@ function clone_graph_without_node(graph, node_id) {
 			if (expand_edge[0] && expand_edge[1] && point_index == 1) {
 				var line_width = previous_delta[0] + delta[0];
 				var line_height = previous_delta[1] + delta[1];
-				path += " l " + 0 + " "
-				  + line_height;				
-				path += " l " + line_width + " "
-				  + 0;													
+				continue_shape(points,[0,line_height]);
+				continue_shape(points,[line_width,0]);
 			}
 			if (expand_edge[0] && expand_edge[1] && (point_index == 0 || point_index == 1)) {
 				continue;
@@ -1005,16 +1026,14 @@ function clone_graph_without_node(graph, node_id) {
 			if (expand_edge[3] && expand_edge[4] && point_index == 4) {
 				var line_width = previous_delta[0] + delta[0];
 				var line_height = previous_delta[1] + delta[1];
-				path += " l " + 0 + " "
-				  + line_height;				
-				path += " l " + line_width + " "
-				  + 0;													
+				continue_shape(points,[0,line_height]);
+				continue_shape(points,[line_width,0]);
 			}
 			if (expand_edge[3] && expand_edge[4] && (point_index == 3 || point_index == 4)) {
 				continue;
 			}
 			
-			
+/*			
 			if (!expand_edge[previous_index] || !expand_edge[point_index]) {
 				var ellipse_destination = [0, 0];
 				if (!expand_edge[previous_index]) {
@@ -1033,7 +1052,7 @@ function clone_graph_without_node(graph, node_id) {
 				+ " " + angle + " 0," + (invert_axis_of_object ? 0 : 1) + " "
 					+ ellipse_destination[0] + "," + ellipse_destination[1];								
 			}
-			
+*/			
 
 			
 
@@ -1041,26 +1060,21 @@ function clone_graph_without_node(graph, node_id) {
 				var line_width = delta[index_of_x_axis];
 				var line_height = delta[index_of_y_axis];
 				if (point_index == 2 || point_index ==5) {
-					path += " l " + line_width + " "
-					  + 0;				
-					path += " l " + 0 + " "
-					  + line_height;				
+					continue_shape(points,[line_width,0]);
+					continue_shape(points,[0,line_height]);
 				}
 				else {
-					path += " l " + 0 + " "
-					  + line_height;				
-					path += " l " + line_width + " "
-					  + 0;									
+					continue_shape(points,[0,line_height]);
+					continue_shape(points,[line_width,0]);
 				}
 			} else {							
 				var line_width = delta[index_of_x_axis] - 2*scaled_delta[index_of_x_axis];
 				var line_height = delta[index_of_y_axis] - 2*scaled_delta[index_of_y_axis]; 
-				path += " l " + line_width + " "
-				  + line_height;				
+				continue_shape(points,[line_width,line_height]);
 			}
 
 		}
-		return path + " z";
+		return get_path_of_contact_icon(points);
 		
 	}
 	
