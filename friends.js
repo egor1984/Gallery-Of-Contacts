@@ -1142,7 +1142,8 @@ function clone_graph_without_node(graph, node_id) {
 			    fill: "url(" + contact.photo + ")",
 			    "cursor" : "pointer",
 			    "stroke" : "none",
-			    "title"  : contact.first_name + " " + contact.last_name			    				    	
+			    "title"  : contact.first_name + " " + contact.last_name,
+			    "fill-size" : "37.5pt 37.5pt"
 			});
 			
 //			image.attr({"href":get_contact_url(uid),"target":"_top"});
