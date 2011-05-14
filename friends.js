@@ -993,9 +993,37 @@ function clone_graph_without_node(graph, node_id) {
 		var next_point = get_sum_of_vectors(points[points.length - 1],offset);
 		points.push(next_point);
 	}
+	
+	function get_lower_bound_of_shape(points) {
+		var lower_bound = [points[0][0],points[0][1]];
+		for (var i = 1; i < points.length; i++) {
+			if (lower_bound[0] > points[i][0]) {
+				lower_bound[0] = points[i][0];
+			}
+			if (lower_bound[1] > points[i][1]) {
+				lower_bound[1] = points[i][1];
+			}			
+		}
+		return lower_bound;
+	}
+	
+//Function return points with coordinates shifted to the rounded lower bound and then rounded. 	
+	function get_aligned_shape(points) {
+		var lower_bound = get_lower_bound_of_shape(points);
+		var lower_bound_of_aligned_shape = [Math.round(lower_bound[0]),Math.round(lower_bound[1])];
+		var shift = [lower_bound_of_aligned_shape[0] - lower_bound[0], lower_bound_of_aligned_shape[1] - lower_bound[1]];
+		var aligned_shape = [];
+		for (var index = 0; index < points.length; index++) {
+			var point = points[index];
+			var shifted_point = [point[0] + shift[0], point[1] + shift[1]];
+			var aligned_point = [Math.round(shifted_point[0]),Math.round(shifted_point[1])];
+			aligned_shape.push(aligned_point);
+		}
+		return aligned_shape;		
+	}
 		
 	
-	function create_path_of_object(start_point, deltas, invert_axis_of_object, expand_edge, width_of_cell) {
+	function get_shape_of_object(start_point, deltas, invert_axis_of_object, expand_edge, width_of_cell) {
 		var points = [start_point];
 		var angle = 0;
 		for (var point_index = 0; point_index < deltas.length; point_index++) {
@@ -1074,7 +1102,7 @@ function clone_graph_without_node(graph, node_id) {
 			}
 
 		}
-		return get_path_of_contact_icon(points);
+		return points;
 		
 	}
 	
@@ -1131,26 +1159,27 @@ function clone_graph_without_node(graph, node_id) {
 			
 
 			
-			var path_string = create_path_of_object([offset.x + deltas[3][0]
+			var shape = get_shape_of_object([offset.x + deltas[3][0]
 													,offset.y + deltas[3][1]], deltas, true, expand_edge, width_of_cell);
+			var aligned_shape = get_aligned_shape(shape);
+			var path_string = get_path_of_contact_icon(aligned_shape);
+
 			var image = paper.path(path_string);
 			
+			var lower_bound = get_lower_bound_of_shape(aligned_shape);
 			
-			
-//			var image = r.rect(node.point[0], node.point[1], 50, 50, 5);
+;			
 			image.attr({
 			    fill: "url(" + contact.photo + ")",
 			    "cursor" : "pointer",
 			    "stroke" : "none",
 			    "title"  : contact.first_name + " " + contact.last_name,
-			    "fill-size" : "37.5pt 37.5pt"
+			    "fill-size" : "37.5pt 37.5pt"			    
 			});
 			
 //			image.attr({"href":get_contact_url(uid),"target":"_top"});
 
 			
-//            set.push(r.text(node.point[0] + 15, node.point[1] + 41, contact.first_name).attr({"text-anchor":"middle"}));
-//            set.push(r.text(node.point[0] + 15, node.point[1] + 51, contact.last_name).attr({"text-anchor":"middle"}));
 			return image;
 		}
 		else {
