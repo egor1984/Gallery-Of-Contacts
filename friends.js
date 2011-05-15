@@ -1165,10 +1165,7 @@ function clone_graph_without_node(graph, node_id) {
 			var path_string = get_path_of_contact_icon(aligned_shape);
 
 			var image = paper.path(path_string);
-			
-			var lower_bound = get_lower_bound_of_shape(aligned_shape);
-			
-;			
+
 			image.attr({
 			    fill: "url(" + contact.photo + ")",
 			    "cursor" : "pointer",

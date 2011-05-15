@@ -2272,15 +2272,15 @@
                                 el = $("pattern");
                                 var ig = $("image");
                                 el.id = createUUID();
-                                $(el, {x: 0, y: 0, patternUnits: "userSpaceOnUse", height: 1, width: 1});
-                                $(ig, {x: 0, y: 0, "xlink:href": isURL[1]});
+                                $(el, {x: -1, y: -1, patternUnits: "userSpaceOnUse", height: 1, width: 1});
+                                $(ig, {x: 1, y: 1, "xlink:href": isURL[1]});
                                 el.appendChild(ig);
 
                                 (function (el) {
                                     preload(isURL[1], function () {
                                         var w = this.offsetWidth,
                                             h = this.offsetHeight;
-                                        $(el, {width: w, height: h});
+                                        $(el, {width: w + 2, height: h + 2});
                                         $(ig, {width: w, height: h});
                                         o.paper.safari();
                                     });
