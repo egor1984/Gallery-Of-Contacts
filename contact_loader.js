@@ -66,7 +66,7 @@ function contact_loader()
 	}
 */	
 		var request = { traits:traits,parameters:parameters, 
-							done: false, on_done:callback,size_factor:size_factor}
+							done: false, on_done:callback,size_factor:size_factor};
 		this.queue.push( request);
 		if (!this.timeout_id) {
 			this.timeout_id = window.setTimeout(this.process_sheduled_task, 0);
