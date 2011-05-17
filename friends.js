@@ -620,7 +620,7 @@ function draw_grid_of_friends(user) {
 		}
 	});
 
-	var paper = Raphael("canvas", width_of_window, 0);
+	var paper = window.Raphael("canvas", width_of_window, 0);
 	
 
 	
@@ -700,7 +700,7 @@ setTimeout( function() {
 
 	
 	var result_string = getUrlParameter(window.location.href, "api_result");
-	var result = JSON.parse(unescape(result_string));
+	var result = window.JSON.parse(unescape(result_string));
 	if (!result.response) {
 		if (result.error) {
 			alert(result.error.error_msg);
@@ -1180,7 +1180,7 @@ function clone_graph_without_node(graph, node_id) {
 			return image;
 		}
 		else {
-			var color = Raphael.getColor();
+			var color = window.Raphael.getColor();
 			return paper.ellipse(offset.x, offset.y, 20, 15)
 				.attr({fill: color, stroke: color, "stroke-width": 2,"cursor" : "pointer"});
 		}
@@ -1196,7 +1196,7 @@ function clone_graph_without_node(graph, node_id) {
 
 		icon.node.onclick = function() {
 			try {
-				parent.window.location = get_contact_url(uid);
+				window.parent.window.location = get_contact_url(uid);
 			} catch (exception) {
 //				ie workaround					
 				window.open(get_contact_url(uid));

@@ -200,6 +200,7 @@
                 return path;
             }
             var x, y, i, j, pathi;
+            var ii, jj;
             path = path2curve(path);
             for (i = 0, ii = path.length; i < ii; i++) {
                 pathi = path[i];
@@ -440,7 +441,8 @@
                 docum.close();
                 bod = docum.body;
             } catch(e) {
-                bod = createPopup().document.body;
+            	alert("exception:" + e + ". Code is commented out.");
+//                bod = createPopup().document.body;
             }
             var range = bod.createTextRange();
             toHex = cacher(function (color) {
@@ -2057,7 +2059,7 @@
                     attr = {};
                     attr["marker-" + se] = "url(#" + markerId + ")";
                     if (to || from) {
-                        attr.d = Raphael.getSubpath(attrs.path, from, to);
+                        attr.d = window.Raphael.getSubpath(attrs.path, from, to);
                     }
                     $(node, attr);
                     o._.arrows[se + "Path"] = pathId;
@@ -2073,7 +2075,7 @@
                         from = 0;
                         to = R.getTotalLength(attrs.path) - (o._.arrows.enddx * stroke || 0);
                     }
-                    o._.arrows[se + "Path"] && $(node, {d: Raphael.getSubpath(attrs.path, from, to)});
+                    o._.arrows[se + "Path"] && $(node, {d: window.Raphael.getSubpath(attrs.path, from, to)});
                     delete o._.arrows[se + "Path"];
                     delete o._.arrows[se + "Marker"];
                     delete o._.arrows[se + "dx"];
@@ -5275,7 +5277,7 @@
             return;
         }
         if (!isInAnim) {
-            for (attr in params) if (params[has](attr)) {
+            for (var attr in params) if (params[has](attr)) {
                 if (availableAnimAttrs[has](attr) || element.paper.customAttributes[has](attr)) {
                     from[attr] = element.attr(attr);
                     (from[attr] == null) && (from[attr] = availableAttrs[attr]);
@@ -5873,7 +5875,7 @@
         return token || E;
     };
     R.ninja = function () {
-        oldRaphael.was ? (g.win.Raphael = oldRaphael.is) : delete Raphael;
+        oldRaphael.was ? (g.win.Raphael = oldRaphael.is) : delete window.Raphael;
         return R;
     };
     /*\
@@ -5907,7 +5909,7 @@
         isLoaded();
     })(document, "DOMContentLoaded");
 
-    oldRaphael.was ? (g.win.Raphael = R) : (Raphael = R);
+    oldRaphael.was ? (g.win.Raphael = R) : (window.Raphael = R);
 
     /*
      * Eve 0.2.1 - JavaScript Events Library

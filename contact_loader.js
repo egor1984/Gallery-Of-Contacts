@@ -1,3 +1,7 @@
+
+//external declaration for closure compiler
+var VK;
+
 function get_request_key(traits, parameters) 
 {
 	var key = ""; 	
@@ -35,9 +39,9 @@ function contact_loader()
 		
 		var key = get_request_key(traits, parameters);
 
-		var response = localStorage.getItem(key);
+		var response = window.localStorage.getItem(key);
 		if (response != null) {
-			traits.response_handler(parameters,JSON.parse(response));
+			traits.response_handler(parameters,window.JSON.parse(response));
 			setTimeout(function() {
 				callback(parameters, "Success");				
 			},0);				
@@ -151,7 +155,7 @@ function contact_loader()
 					var response = data.response[i];
 					
 					var key = get_request_key(traits, details_request.parameters);
-					localStorage.setItem(key,JSON.stringify(response));
+					window.localStorage.setItem(key,window.JSON.stringify(response));
 					
 					if (response == false) {
 						details_request.on_done(details_request.parameters, "Failure");
