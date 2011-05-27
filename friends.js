@@ -1171,12 +1171,13 @@ function clone_graph_without_node(graph, node_id) {
 			    "cursor" : "pointer",
 			    "stroke" : "none",
 			    "title"  : contact.first_name + " " + contact.last_name,
-			    "fill-size" : "37.5pt 37.5pt"			    
+			    "fill-size" : "37.5pt 37.5pt",
+			    "href" : get_contact_url(contact.uid),
+			    "target":"_top"
+			    
 			});
 			
-//			image.attr({"href":get_contact_url(uid),"target":"_top"});
 
-			
 			return image;
 		}
 		else {
@@ -1192,17 +1193,6 @@ function clone_graph_without_node(graph, node_id) {
 		var contact = loaded_contacts[uid];
 
 		var icon = create_contact_icon(paper,contact,width_of_cell, position, expand_edge);
-		
-
-		icon.node.onclick = function() {
-			try {
-				window.parent.window.location = get_contact_url(uid);
-			} catch (exception) {
-//				ie workaround					
-				window.open(get_contact_url(uid));
-			}
-		};
-	
 	
 	}
 		

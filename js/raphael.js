@@ -2139,8 +2139,12 @@
                                 hl.appendChild(node);
                                 pn = hl;
                             }
-                            if (att == "target" && value == "blank") {
-                                pn.setAttributeNS(xlink, "show", "new");
+                            if (att == "target") {
+                            	if (value == "blank") {
+                            		pn.setAttributeNS(xlink, "show", "new");
+                            	} else {
+                            		pn.setAttribute(att,value);                            		
+                            	}
                             } else {
                                 pn.setAttributeNS(xlink, att, value);
                             }
@@ -3231,6 +3235,7 @@
             stroke[se + "arrowwidth"] = h;
         };
         setFillAndStroke = function (o, params) {
+
             o.paper.canvas.style.display = "none";
             o.attrs = o.attrs || {};
             var node = o.node,
@@ -3249,6 +3254,7 @@
                 a.path = getPath[o.type](o);
                 o._.dirty = 1;
             }
+            
             params.href && (node.href = params.href);
             params.title && (node.title = params.title);
             params.target && (node.target = params.target);
@@ -3804,7 +3810,7 @@
             el.coordsize = zoom + S + zoom;
             el.coordorigin = vml.coordorigin;
             var p = new Element(el, vml),
-                attr = {fill: "none", stroke: "#000"};
+                attr = {fill: "none", stroke: "#000", target:"_top"};
             pathString && (attr.path = pathString);
             p.type = "path";
             p.path = [];
@@ -3816,6 +3822,7 @@
             el.appendChild(skew);
             p.skew = skew;
             p.transform(E);
+
             return p;
         };
         theRect = function (vml, x, y, w, h, r) {
