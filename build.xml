@@ -12,7 +12,7 @@
 				<file name="utility.js" />
 				<file name="friends.js" />
 			</sources>
-			<sources dir="${basedir}/js">
+			<sources dir="${basedir}/raphael">
 				<file name="raphael.js" />
 			</sources>
 		</jscomp>
