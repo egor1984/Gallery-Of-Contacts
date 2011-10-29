@@ -1,6 +1,1 @@
-[submodule "raphael"]
-	path = raphael
-	url = https://github.com/egor1984/raphael.git
-[submodule "jquery"]
-	path = jquery
-	url = git://github.com/jquery/jquery.git
+

@@ -620,7 +620,6 @@ function draw_grid_of_friends(user) {
 		}
 	});
 
-	var paper = window.Raphael("canvas", width_of_window, 0);
 	
 
 	
@@ -660,11 +659,13 @@ function draw_grid_of_friends(user) {
 			var position = {x:(width_of_cell + width_of_border)*shifted_coordinate[0]
 							, y:(width_of_cell + width_of_border)*shifted_coordinate[1]};
 			
-			draw_contact_icon(paper,uid,position, width_of_cell, expand_edge);
+			var area_element = document.getElementById("area");
+			draw_contact_icon(area_element,uid,position, width_of_cell, expand_edge);
 			if (position.y > maximum_y) {
 				maximum_y = position.y;
 				var height_of_window = maximum_y + width_of_cell;
-				paper.setSize(606, height_of_window);
+//TODO implement
+//				paper.setSize(606, height_of_window);
 			}
 		});
 		
@@ -1149,7 +1150,8 @@ function clone_graph_without_node(graph, node_id) {
 		return bounds;
 	}
 	
-	function create_contact_icon(paper,contact,width_of_cell,offset, expand_edge) {
+	function create_contact_icon(area_element,contact,width_of_cell,offset, expand_edge) {
+
 		if (contact && contact.photo) {
 			
 			var sqrt3 = Math.sqrt(3);
@@ -1164,35 +1166,64 @@ function clone_graph_without_node(graph, node_id) {
 			var aligned_shape = get_aligned_shape(shape);
 			var path_string = get_path_of_contact_icon(aligned_shape);
 
-			var image = paper.path(path_string);
-
-			image.attr({
-			    fill: "url(" + contact.photo + ")",
-			    "cursor" : "pointer",
-			    "stroke" : "none",
-			    "title"  : contact.first_name + " " + contact.last_name,
-			    "fill-size" : "37.5pt 37.5pt",
-			    "href" : get_contact_url(contact.uid),
-			    "target":"_top"
-			    
-			});
+			
+			var coordinates = ""
+				for (var point_index = 0; point_index < aligned_shape.length; point_index++) {
+					coordinates += aligned_shape[point_index][0] + " " + aligned_shape[point_index][1] + " ";
+				}
+			coordinates += aligned_shape[0][0] + " " + aligned_shape[0][1];
 			
 
-			return image;
+			var polygon_element = document.createElementNS("http://www.w3.org/2000/svg","polygon");
+			polygon_element.setAttribute("points",coordinates);
+
+			lower_bound_of_image = get_lower_bound_of_shape(aligned_shape);
+			
+			var clip_path_element = document.createElementNS("http://www.w3.org/2000/svg","clipPath");
+			var clipPathId = "clipPathForUID" + contact.uid;
+			clip_path_element.setAttribute("id",clipPathId);
+			
+			clip_path_element.appendChild(polygon_element);
+			defs_element = area_element.getElementsByTagName("defs")[0];
+			defs_element.appendChild(clip_path_element);
+			
+						
+			var image_element = document.createElementNS("http://www.w3.org/2000/svg","image");
+			image_element.setAttribute("x",lower_bound_of_image[0]);
+			image_element.setAttribute("y",lower_bound_of_image[1]);
+			image_element.setAttribute("width",width_of_cell);
+			image_element.setAttribute("height",width_of_cell);
+			image_element.setAttribute("cursor","pointer");
+			var image_title = contact.first_name + " " + contact.last_name;
+			image_element.setAttributeNS("http://www.w3.org/1999/xlink","href",contact.photo);
+			image_element.setAttribute("clip-path", "url(#" + clipPathId + ")");
+
+			anchor_element = document.createElementNS("http://www.w3.org/2000/svg","a");
+			anchor_element.setAttributeNS("http://www.w3.org/1999/xlink","href",get_contact_url(contact.uid));
+			anchor_element.setAttributeNS("http://www.w3.org/1999/xlink","show","replace");
+			anchor_element.setAttribute("target","_top");
+			anchor_element.setAttributeNS("http://www.w3.org/1999/xlink","title",image_title);
+			
+			anchor_element.appendChild(image_element)
+			
+			area_element.appendChild(anchor_element);
+
+			return image_element;
 		}
 		else {
-			var color = window.Raphael.getColor();
-			return paper.ellipse(offset.x, offset.y, 20, 15)
-				.attr({fill: color, stroke: color, "stroke-width": 2,"cursor" : "pointer"});
+//TODO implement
+//			var color = window.Raphael.getColor();
+//			return paper.ellipse(offset.x, offset.y, 20, 15)
+//				.attr({fill: color, stroke: color, "stroke-width": 2,"cursor" : "pointer"});
 		}
 		
 	}
 	
-	function draw_contact_icon(paper,uid,position,width_of_cell, expand_edge) {
+	function draw_contact_icon(area_element,uid,position,width_of_cell, expand_edge) {
 		
 		var contact = loaded_contacts[uid];
 
-		var icon = create_contact_icon(paper,contact,width_of_cell, position, expand_edge);
+		var icon = create_contact_icon(area_element,contact,width_of_cell, position, expand_edge);
 	
 	}
 		
