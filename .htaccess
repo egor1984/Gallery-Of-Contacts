@@ -1,0 +1,4 @@
+# MS Internet Explorer - Mozilla v4
+RewriteEngine On
+RewriteCond %{HTTP_USER_AGENT} ^Mozilla/4(.*)MSIE
+RewriteRule ^/?(.*)$ /gallery_of_contacts_for_internet_explorer_8/$1 [L,NE]
