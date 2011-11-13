@@ -1177,14 +1177,14 @@ function clone_graph_without_node(graph, node_id) {
 			var polygon_element = document.createElementNS("http://www.w3.org/2000/svg","polygon");
 			polygon_element.setAttribute("points",coordinates);
 
-			lower_bound_of_image = get_lower_bound_of_shape(aligned_shape);
+			var lower_bound_of_image = get_lower_bound_of_shape(aligned_shape);
 			
 			var clip_path_element = document.createElementNS("http://www.w3.org/2000/svg","clipPath");
 			var clipPathId = "clipPathForUID" + contact.uid;
 			clip_path_element.setAttribute("id",clipPathId);
 			
 			clip_path_element.appendChild(polygon_element);
-			defs_element = area_element.getElementsByTagName("defs")[0];
+			var defs_element = area_element.getElementsByTagName("defs")[0];
 			defs_element.appendChild(clip_path_element);
 			
 						
@@ -1198,7 +1198,7 @@ function clone_graph_without_node(graph, node_id) {
 			image_element.setAttributeNS("http://www.w3.org/1999/xlink","href",contact.photo);
 			image_element.setAttribute("clip-path", "url(#" + clipPathId + ")");
 
-			anchor_element = document.createElementNS("http://www.w3.org/2000/svg","a");
+			var anchor_element = document.createElementNS("http://www.w3.org/2000/svg","a");
 			anchor_element.setAttributeNS("http://www.w3.org/1999/xlink","href",get_contact_url(contact.uid));
 			anchor_element.setAttributeNS("http://www.w3.org/1999/xlink","show","replace");
 			anchor_element.setAttribute("target","_top");
