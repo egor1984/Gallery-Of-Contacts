@@ -1174,7 +1174,6 @@ function clone_graph_without_node(graph, node_id) {
 			    "fill-size" : "37.5pt 37.5pt",
 			    "href" : get_contact_url(contact.uid),
 			    "target":"_top"
-			    
 			});
 			
 
