@@ -12,9 +12,6 @@
 				<file name="utility.js" />
 				<file name="friends.js" />
 			</sources>
-			<sources dir="${basedir}/raphael">
-				<file name="raphael.js" />
-			</sources>
 		</jscomp>
 
 	</target>

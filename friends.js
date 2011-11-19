@@ -1,4 +1,6 @@
-
+var zoom = 21600;
+var PI = Math.PI;
+var oid = 0;
 setTimeout( function() {
 }, 500);
 
@@ -575,10 +577,10 @@ function get_lower_bound_for_grid(grids_positions,dimensions_of_grid,maximum_wid
 
 function draw_grid_of_friends(user) {
 
-	var width_of_window = 606;
 	
 	var width_of_cell = 50;
 	var width_of_border = 5;
+	var width_of_window = 606;
 	
 	var grids = [];
 	var excludes = {};
@@ -620,7 +622,8 @@ function draw_grid_of_friends(user) {
 		}
 	});
 
-	var paper = window.Raphael("canvas", width_of_window, 0);
+//	var paper = window.Raphael("canvas", width_of_window, 0);
+    var paper = R_engine_create("canvas", width_of_window, 0);
 	
 
 	
@@ -664,7 +667,7 @@ function draw_grid_of_friends(user) {
 			if (position.y > maximum_y) {
 				maximum_y = position.y;
 				var height_of_window = maximum_y + width_of_cell;
-				paper.setSize(606, height_of_window);
+//TODO			paper.setSize(606, height_of_window);
 			}
 		});
 		
@@ -1216,6 +1219,7 @@ function clone_graph_without_node(graph, node_id) {
         return this.join(",").replace(p2s, "$1");
     };
 
+    
     var R_parsePathString = cacher(function (pathString) {
         if (!pathString) {
             return null;
@@ -1253,6 +1257,23 @@ function clone_graph_without_node(graph, node_id) {
         data.toString = R__path2string;
         return data;
     });
+    
+    var pathClone = function (pathArray) {
+        var res = [];
+        if (!R_is(pathArray, "array") || !R_is(pathArray && pathArray[0], "array")) { // rough assumption
+            pathArray = R_parsePathString(pathArray);
+        }
+        for (var i = 0, ii = pathArray.length; i < ii; i++) {
+            res[i] = [];
+            for (var j = 0, jj = pathArray[i].length; j < jj; j++) {
+                res[i][j] = pathArray[i][j];
+            }
+        }
+        res.toString = R__path2string;
+        return res;
+    };
+    
+    
     // http://schepers.cc/getting-to-the-point
     function catmullRom2bezier(crp) {
         var d = [];
@@ -1279,7 +1300,257 @@ function clone_graph_without_node(graph, node_id) {
 
         return d;
     }
+
+    var pathToAbsolute = cacher(function (pathArray) {
+        if (!R_is(pathArray, "array") || !R_is(pathArray && pathArray[0], "array")) { // rough assumption
+            pathArray = R_parsePathString(pathArray);
+        }
+        if (!pathArray || !pathArray.length) {
+            return [["M", 0, 0]];
+        }
+        var res = [],
+            x = 0,
+            y = 0,
+            mx = 0,
+            my = 0,
+            start = 0;
+        if (pathArray[0][0] == "M") {
+            x = +pathArray[0][1];
+            y = +pathArray[0][2];
+            mx = x;
+            my = y;
+            start++;
+            res[0] = ["M", x, y];
+        }
+        for (var r, pa, i = start, ii = pathArray.length; i < ii; i++) {
+            res.push(r = []);
+            pa = pathArray[i];
+            if (pa[0] != String.prototype.toUpperCase.call(pa[0])) {
+                r[0] = String.prototype.toUpperCase.call(pa[0]);
+                switch (r[0]) {
+                    case "A":
+                        r[1] = pa[1];
+                        r[2] = pa[2];
+                        r[3] = pa[3];
+                        r[4] = pa[4];
+                        r[5] = pa[5];
+                        r[6] = +(pa[6] + x);
+                        r[7] = +(pa[7] + y);
+                        break;
+                    case "V":
+                        r[1] = +pa[1] + y;
+                        break;
+                    case "H":
+                        r[1] = +pa[1] + x;
+                        break;
+                    case "R":
+                        var dots = [x, y]["concat"](pa.slice(1));
+                        for (var j = 2, jj = dots.length; j < jj; j++) {
+                            dots[j] = +dots[j] + x;
+                            dots[++j] = +dots[j] + y;
+                        }
+                        res.pop();
+                        res = res["concat"](catmullRom2bezier(dots));
+                        break;
+                    case "M":
+                        mx = +pa[1] + x;
+                        my = +pa[2] + y;
+                    default:
+                        for (j = 1, jj = pa.length; j < jj; j++) {
+                            r[j] = +pa[j] + ((j % 2) ? x : y);
+                        }
+                }
+            } else if (pa[0] == "R") {
+                dots = [x, y]["concat"](pa.slice(1));
+                res.pop();
+                res = res["concat"](catmullRom2bezier(dots));
+                r = ["R"]["concat"](pa.slice(-2));
+            } else {
+                for (var k = 0, kk = pa.length; k < kk; k++) {
+                    r[k] = pa[k];
+                }
+            }
+            switch (r[0]) {
+                case "Z":
+                    x = mx;
+                    y = my;
+                    break;
+                case "H":
+                    x = r[1];
+                    break;
+                case "V":
+                    y = r[1];
+                    break;
+                case "M":
+                    mx = r[r.length - 2];
+                    my = r[r.length - 1];
+                default:
+                    x = r[r.length - 2];
+                    y = r[r.length - 1];
+            }
+        }
+        res.toString = R__path2string;
+        return res;
+    }, null, pathClone);
     
+    var l2c = function (x1, y1, x2, y2) {
+        return [x1, y1, x2, y2, x2, y2];
+    };
+    var q2c = function (x1, y1, ax, ay, x2, y2) {
+        var _13 = 1 / 3,
+            _23 = 2 / 3;
+        return [
+                _13 * x1 + _23 * ax,
+                _13 * y1 + _23 * ay,
+                _13 * x2 + _23 * ax,
+                _13 * y2 + _23 * ay,
+                x2,
+                y2
+            ];
+    };
+
+    var a2c = function (x1, y1, rx, ry, angle, large_arc_flag, sweep_flag, x2, y2, recursive) {
+        // for more information of where this math came from visit:
+        // http://www.w3.org/TR/SVG11/implnote.html#ArcImplementationNotes
+        var _120 = PI * 120 / 180,
+            rad = PI / 180 * (+angle || 0),
+            res = [],
+            xy,
+            rotate = cacher(function (x, y, rad) {
+                var X = x * Math.cos(rad) - y * Math.sin(rad),
+                    Y = x * Math.sin(rad) + y * Math.cos(rad);
+                return {x: X, y: Y};
+            });
+        if (!recursive) {
+            xy = rotate(x1, y1, -rad);
+            x1 = xy.x;
+            y1 = xy.y;
+            xy = rotate(x2, y2, -rad);
+            x2 = xy.x;
+            y2 = xy.y;
+            var cos = Math.cos(PI / 180 * angle),
+                sin = Math.sin(PI / 180 * angle),
+                x = (x1 - x2) / 2,
+                y = (y1 - y2) / 2;
+            var h = (x * x) / (rx * rx) + (y * y) / (ry * ry);
+            if (h > 1) {
+                h = Math.sqrt(h);
+                rx = h * rx;
+                ry = h * ry;
+            }
+            var rx2 = rx * rx,
+                ry2 = ry * ry,
+                k = (large_arc_flag == sweep_flag ? -1 : 1) *
+                    Math.sqrt(Math.abs((rx2 * ry2 - rx2 * y * y - ry2 * x * x) / (rx2 * y * y + ry2 * x * x))),
+                cx = k * rx * y / ry + (x1 + x2) / 2,
+                cy = k * -ry * x / rx + (y1 + y2) / 2,
+                f1 = Math.asin(((y1 - cy) / ry).toFixed(9)),
+                f2 = Math.asin(((y2 - cy) / ry).toFixed(9));
+
+            f1 = x1 < cx ? PI - f1 : f1;
+            f2 = x2 < cx ? PI - f2 : f2;
+            f1 < 0 && (f1 = PI * 2 + f1);
+            f2 < 0 && (f2 = PI * 2 + f2);
+            if (sweep_flag && f1 > f2) {
+                f1 = f1 - PI * 2;
+            }
+            if (!sweep_flag && f2 > f1) {
+                f2 = f2 - PI * 2;
+            }
+        } else {
+            f1 = recursive[0];
+            f2 = recursive[1];
+            cx = recursive[2];
+            cy = recursive[3];
+        }
+        var df = f2 - f1;
+        if (Math.abs(df) > _120) {
+            var f2old = f2,
+                x2old = x2,
+                y2old = y2;
+            f2 = f1 + _120 * (sweep_flag && f2 > f1 ? 1 : -1);
+            x2 = cx + rx * Math.cos(f2);
+            y2 = cy + ry * Math.sin(f2);
+            res = a2c(x2, y2, rx, ry, angle, 0, sweep_flag, x2old, y2old, [f2, f2old, cx, cy]);
+        }
+        df = f2 - f1;
+        var c1 = Math.cos(f1),
+            s1 = Math.sin(f1),
+            c2 = Math.cos(f2),
+            s2 = Math.sin(f2),
+            t = Math.tan(df / 4),
+            hx = 4 / 3 * rx * t,
+            hy = 4 / 3 * ry * t,
+            m1 = [x1, y1],
+            m2 = [x1 + hx * s1, y1 - hy * c1],
+            m3 = [x2 + hx * s2, y2 - hy * c2],
+            m4 = [x2, y2];
+        m2[0] = 2 * m1[0] - m2[0];
+        m2[1] = 2 * m1[1] - m2[1];
+        if (recursive) {
+            return [m2, m3, m4]["concat"](res);
+        } else {
+            res = [m2, m3, m4]["concat"](res).join()["split"](",");
+            var newres = [];
+            for (var i = 0, ii = res.length; i < ii; i++) {
+                newres[i] = i % 2 ? rotate(res[i - 1], res[i], rad).y : rotate(res[i], res[i + 1], rad).x;
+            }
+            return newres;
+        }
+    };
+    
+    
+    var findDotAtSegment = function (p1x, p1y, c1x, c1y, c2x, c2y, p2x, p2y, t) {
+        var t1 = 1 - t;
+        return {
+            x: Math.pow(t1, 3) * p1x + Math.pow(t1, 2) * 3 * t * c1x + t1 * 3 * t * t * c2x + Math.pow(t, 3) * p2x,
+            y: Math.pow(t1, 3) * p1y + Math.pow(t1, 2) * 3 * t * c1y + t1 * 3 * t * t * c2y + Math.pow(t, 3) * p2y
+        };
+    };
+    
+    var curveDim = cacher(function (p1x, p1y, c1x, c1y, c2x, c2y, p2x, p2y) {
+        var a = (c2x - 2 * c1x + p1x) - (p2x - 2 * c2x + c1x),
+            b = 2 * (c1x - p1x) - 2 * (c2x - c1x),
+            c = p1x - c1x,
+            t1 = (-b + Math.sqrt(b * b - 4 * a * c)) / 2 / a,
+            t2 = (-b - Math.sqrt(b * b - 4 * a * c)) / 2 / a,
+            y = [p1y, p2y],
+            x = [p1x, p2x],
+            dot;
+        Math.abs(t1) > "1e12" && (t1 = .5);
+        Math.abs(t2) > "1e12" && (t2 = .5);
+        if (t1 > 0 && t1 < 1) {
+            dot = findDotAtSegment(p1x, p1y, c1x, c1y, c2x, c2y, p2x, p2y, t1);
+            x.push(dot.x);
+            y.push(dot.y);
+        }
+        if (t2 > 0 && t2 < 1) {
+            dot = findDotAtSegment(p1x, p1y, c1x, c1y, c2x, c2y, p2x, p2y, t2);
+            x.push(dot.x);
+            y.push(dot.y);
+        }
+        a = (c2y - 2 * c1y + p1y) - (p2y - 2 * c2y + c1y);
+        b = 2 * (c1y - p1y) - 2 * (c2y - c1y);
+        c = p1y - c1y;
+        t1 = (-b + Math.sqrt(b * b - 4 * a * c)) / 2 / a;
+        t2 = (-b - Math.sqrt(b * b - 4 * a * c)) / 2 / a;
+        Math.abs(t1) > "1e12" && (t1 = .5);
+        Math.abs(t2) > "1e12" && (t2 = .5);
+        if (t1 > 0 && t1 < 1) {
+            dot = findDotAtSegment(p1x, p1y, c1x, c1y, c2x, c2y, p2x, p2y, t1);
+            x.push(dot.x);
+            y.push(dot.y);
+        }
+        if (t2 > 0 && t2 < 1) {
+            dot = findDotAtSegment(p1x, p1y, c1x, c1y, c2x, c2y, p2x, p2y, t2);
+            x.push(dot.x);
+            y.push(dot.y);
+        }
+        return {
+            min: {x: Math.min["apply"](0, x), y: Math.min["apply"](0, y)},
+            max: {x: Math.max["apply"](0, x), y: Math.max["apply"](0, y)}
+        };
+    });
     var R_path2curve = cacher(function (path, path2) {
         var p = pathToAbsolute(path),
             p2 = path2 && pathToAbsolute(path2),
@@ -1374,97 +1645,6 @@ function clone_graph_without_node(graph, node_id) {
     }, null, pathClone);
     
     
-    pathToAbsolute = cacher(function (pathArray) {
-        if (!R_is(pathArray, "array") || !R_is(pathArray && pathArray[0], "array")) { // rough assumption
-            pathArray = R_parsePathString(pathArray);
-        }
-        if (!pathArray || !pathArray.length) {
-            return [["M", 0, 0]];
-        }
-        var res = [],
-            x = 0,
-            y = 0,
-            mx = 0,
-            my = 0,
-            start = 0;
-        if (pathArray[0][0] == "M") {
-            x = +pathArray[0][1];
-            y = +pathArray[0][2];
-            mx = x;
-            my = y;
-            start++;
-            res[0] = ["M", x, y];
-        }
-        for (var r, pa, i = start, ii = pathArray.length; i < ii; i++) {
-            res.push(r = []);
-            pa = pathArray[i];
-            if (pa[0] != String.prototype.toUpperCase.call(pa[0])) {
-                r[0] = String.prototype.toUpperCase.call(pa[0]);
-                switch (r[0]) {
-                    case "A":
-                        r[1] = pa[1];
-                        r[2] = pa[2];
-                        r[3] = pa[3];
-                        r[4] = pa[4];
-                        r[5] = pa[5];
-                        r[6] = +(pa[6] + x);
-                        r[7] = +(pa[7] + y);
-                        break;
-                    case "V":
-                        r[1] = +pa[1] + y;
-                        break;
-                    case "H":
-                        r[1] = +pa[1] + x;
-                        break;
-                    case "R":
-                        var dots = [x, y]["concat"](pa.slice(1));
-                        for (var j = 2, jj = dots.length; j < jj; j++) {
-                            dots[j] = +dots[j] + x;
-                            dots[++j] = +dots[j] + y;
-                        }
-                        res.pop();
-                        res = res["concat"](catmullRom2bezier(dots));
-                        break;
-                    case "M":
-                        mx = +pa[1] + x;
-                        my = +pa[2] + y;
-                    default:
-                        for (j = 1, jj = pa.length; j < jj; j++) {
-                            r[j] = +pa[j] + ((j % 2) ? x : y);
-                        }
-                }
-            } else if (pa[0] == "R") {
-                dots = [x, y]["concat"](pa.slice(1));
-                res.pop();
-                res = res["concat"](catmullRom2bezier(dots));
-                r = ["R"]["concat"](pa.slice(-2));
-            } else {
-                for (var k = 0, kk = pa.length; k < kk; k++) {
-                    r[k] = pa[k];
-                }
-            }
-            switch (r[0]) {
-                case "Z":
-                    x = mx;
-                    y = my;
-                    break;
-                case "H":
-                    x = r[1];
-                    break;
-                case "V":
-                    y = r[1];
-                    break;
-                case "M":
-                    mx = r[r.length - 2];
-                    my = r[r.length - 1];
-                default:
-                    x = r[r.length - 2];
-                    y = r[r.length - 1];
-            }
-        }
-        res.toString = R__path2string;
-        return res;
-    }, null, pathClone);
     
     var path2vml = function (path) {
         var total =  /[ahqstv]/ig,
@@ -1869,7 +2049,6 @@ function clone_graph_without_node(graph, node_id) {
                 cy = +a.cy,
                 rx = +a.rx || +a.r || 0,
                 ry = +a.ry || +a.r || 0;
-            var zoom = 21600;
             node.path = R_format("ar{0},{1},{2},{3},{4},{1},{4},{1}x", Math.round((cx - rx) * zoom), Math.round((cy - ry) * zoom), Math.round((cx + rx) * zoom), Math.round((cy + ry) * zoom), Math.round(cx * zoom));
         }
         if ("clip-rect" in params) {
@@ -2057,7 +2236,312 @@ function clone_graph_without_node(graph, node_id) {
     };
     
     
-	function create_contact_icon(paper,contact,width_of_cell,offset, expand_edge) {
+    var R_engine_create = function (id, width, height) {
+        var container = document.getElementById(id);
+            var x = 0;
+            var y = 0;
+        if (!container) {
+            throw new Error("VML container not found.");
+        }
+        var res = {};
+        var c = res.canvas = document.createElement("div"),
+        cs = c.style;
+        x = x || 0;
+        y = y || 0;
+        width = width || 512;
+        height = height || 342;
+        res.width = width;
+        res.height = height;
+        width == +width && (width += "px");
+        height == +height && (height += "px");
+        res.coordsize = zoom * 1e3 + " " + zoom * 1e3;
+        res.coordorigin = "0 0";
+        res.span = document.createElement("span");
+        res.span.style.cssText = "position:absolute;left:-9999em;top:-9999em;padding:0;margin:0;line-height:1;";
+        c.appendChild(res.span);
+        cs.cssText = R_format("top:0;left:0;width:{0};height:{1};display:inline-block;position:relative;clip:rect(0 {0} {1} 0);overflow:hidden", width, height);
+        if (container == 1) {
+
+            document.body.appendChild(c);
+            cs.left = x + "px";
+            cs.top = y + "px";
+            cs.position = "absolute";
+        } else {
+            if (container.firstChild) {
+                container.insertBefore(c, container.firstChild);
+            } else {
+                container.appendChild(c);
+            }
+        }
+        // plugins.call(res, res, R.fn);
+        res.renderfix = function () {};
+        return res;
+    };    
+    
+    var RaphaelElement = function (node, vml) {
+        this[0] = this.node = node;
+        node.raphael = true;
+        this.id = oid++;
+        node.raphaelid = this.id;
+        this.X = 0;
+        this.Y = 0;
+        this.attrs = {};
+        this.paper = vml;
+//        this.matrix = R.matrix();
+        this._ = {
+            transform: [],
+            sx: 1,
+            sy: 1,
+            dx: 0,
+            dy: 0,
+            deg: 0,
+            dirty: 1,
+            dirtyT: 1
+        };
+        !vml.bottom && (vml.bottom = this);
+        this.prev = vml.top;
+        vml.top && (vml.top.next = this);
+        vml.top = this;
+        this.next = null;
+    };
+    var elproto = {};
+
+    var availableAttrs = {
+            "arrow-end": "none",
+            "arrow-start": "none",
+            blur: 0,
+            "clip-rect": "0 0 1e9 1e9",
+            cursor: "default",
+            cx: 0,
+            cy: 0,
+            fill: "#fff",
+            "fill-opacity": 1,
+            font: '10px "Arial"',
+            "font-family": '"Arial"',
+            "font-size": "10",
+            "font-style": "normal",
+            "font-weight": 400,
+            gradient: 0,
+            height: 0,
+            href: "http://raphaeljs.com/",
+            opacity: 1,
+            path: "M0,0",
+            r: 0,
+            rx: 0,
+            ry: 0,
+            src: "",
+            stroke: "#000",
+            "stroke-dasharray": "",
+            "stroke-linecap": "butt",
+            "stroke-linejoin": "butt",
+            "stroke-miterlimit": 0,
+            "stroke-opacity": 1,
+            "stroke-width": 1,
+            target: "_blank",
+            "text-anchor": "middle",
+            title: "Raphael",
+            transform: "",
+            width: 0,
+            x: 0,
+            y: 0
+        };    
+    
+    RaphaelElement.prototype = elproto;
+    elproto.constructor = RaphaelElement;
+    var ellipsePath = function (x, y, rx, ry) {
+        if (ry == null) {
+            ry = rx;
+        }
+        return [["M", x, y], ["m", 0, -ry], ["a", rx, ry, 0, 1, 1, 0, 2 * ry], ["a", rx, ry, 0, 1, 1, 0, -2 * ry], ["z"]];
+    };
+    var rectPath = function (x, y, w, h, r) {
+        if (r) {
+            return [["M", x + r, y], ["l", w - r * 2, 0], ["a", r, r, 0, 0, 1, r, r], ["l", 0, h - r * 2], ["a", r, r, 0, 0, 1, -r, r], ["l", r * 2 - w, 0], ["a", r, r, 0, 0, 1, -r, -r], ["l", 0, r * 2 - h], ["a", r, r, 0, 0, 1, r, -r], ["z"]];
+        }
+        return [["M", x, y], ["l", w, 0], ["l", 0, h], ["l", -w, 0], ["z"]];
+    };
+    
+    var getPath = {
+            path: function (el) {
+                return el.attr("path");
+            },
+            circle: function (el) {
+                var a = el.attrs;
+                return ellipsePath(a.cx, a.cy, a.r);
+            },
+            ellipse: function (el) {
+                var a = el.attrs;
+                return ellipsePath(a.cx, a.cy, a.rx, a.ry);
+            },
+            rect: function (el) {
+                var a = el.attrs;
+                return rectPath(a.x, a.y, a.width, a.height, a.r);
+            },
+            image: function (el) {
+                var a = el.attrs;
+                return rectPath(a.x, a.y, a.width, a.height);
+            },
+            text: function (el) {
+                var bbox = el._getBBox();
+                return rectPath(bbox.x, bbox.y, bbox.width, bbox.height);
+            }
+        };
+
+    var pathDimensions = cacher(function (path) {
+        if (!path) {
+            return {x: 0, y: 0, width: 0, height: 0};
+        }
+        path = R_path2curve(path);
+        var x = 0, 
+            y = 0,
+            X = [],
+            Y = [],
+            p;
+        for (var i = 0, ii = path.length; i < ii; i++) {
+            p = path[i];
+            if (p[0] == "M") {
+                x = p[1];
+                y = p[2];
+                X.push(x);
+                Y.push(y);
+            } else {
+                var dim = curveDim(x, y, p[1], p[2], p[3], p[4], p[5], p[6]);
+                X = X["concat"](dim.min.x, dim.max.x);
+                Y = Y["concat"](dim.min.y, dim.max.y);
+                x = p[5];
+                y = p[6];
+            }
+        }
+        var xmin = Math.min["apply"](0, X),
+            ymin = Math.min["apply"](0, Y);
+        return {
+            x: xmin,
+            y: ymin,
+            width: Math.max["apply"](0, X) - xmin,
+            height: Math.max["apply"](0, Y) - ymin
+        };
+    }, null, function (o) {
+        return {
+            x: o.x,
+            y: o.y,
+            width: o.width,
+            height: o.height
+        };
+    });
+    function x_y_w_h() {
+        return this.x + " " + this.y + " " + this.width + " \xd7 " + this.height;
+    }
+        
+    var mapPath = function (path, matrix) {
+        if (!matrix) {
+            return path;
+        }
+        var x, y, i, j, pathi;
+        var ii,jj;
+        path = R_path2curve(path);
+        for (i = 0, ii = path.length; i < ii; i++) {
+            pathi = path[i];
+            for (j = 1, jj = pathi.length; j < jj; j += 2) {
+                x = matrix.x(pathi[j], pathi[j + 1]);
+                y = matrix.y(pathi[j], pathi[j + 1]);
+                pathi[j] = x;
+                pathi[j + 1] = y;
+            }
+        }
+        return path;
+    };
+    
+    elproto.getBBox = function (isWithoutTransform) {
+        if (this.removed) {
+            return {};
+        }
+        var _ = this._;
+        if (isWithoutTransform) {
+            if (_.dirty || !_.bboxwt) {
+                this.realPath = getPath[this.type](this);
+                _.bboxwt = pathDimensions(this.realPath);
+                _.bboxwt.toString = x_y_w_h;
+                _.dirty = 0;
+            }
+            return _.bboxwt;
+        }
+        if (_.dirty || _.dirtyT || !_.bbox) {
+            if (_.dirty || !this.realPath) {
+                _.bboxwt = 0;
+                this.realPath = getPath[this.type](this);
+            }
+            _.bbox = pathDimensions(mapPath(this.realPath, this.matrix));
+            _.bbox.toString = x_y_w_h;
+            _.dirty = _.dirtyT = 0;
+        }
+        return _.bbox;
+    };
+    elproto.attr = function (name, value) {
+        if (this.removed) {
+            return this;
+        }
+        if (name == null) {
+            var res = {};
+            for (var a in this.attrs) if (this.attrs["hasOwnProperty"](a)) {
+                res[a] = this.attrs[a];
+            }
+            res.gradient && res.fill == "none" && (res.fill = res.gradient) && delete res.gradient;
+            res.transform = this._.transform;
+            return res;
+        }
+        if (value == null && R_is(name, "string")) {
+            if (name == "fill" && this.attrs.fill == "none" && this.attrs.gradient) {
+                return this.attrs.gradient;
+            }
+            var names = name.split(/[\.\/]/),
+                out = {};
+            for (var i = 0, ii = names.length; i < ii; i++) {
+                name = names[i];
+                if (name in this.attrs) {
+                    out[name] = this.attrs[name];
+                } else if (R_is(this.paper.customAttributes[name], "function")) {
+                    out[name] = this.paper.customAttributes[name].def;
+                } else {
+                    out[name] = availableAttrs[name];
+                }
+            }
+            return ii - 1 ? out : out[names[0]];
+        }
+        if (this.attrs && value == null && R_is(name, "array")) {
+            out = {};
+            for (i = 0, ii = name.length; i < ii; i++) {
+                out[name[i]] = this.attr(name[i]);
+            }
+            return out;
+        }
+        var params;
+        if (value != null) {
+            params = {};
+            params[name] = value;
+        }
+        value == null && R_is(name, "object") && (params = name);
+//        for (var key in params) {
+//            eve("attr." + key + "." + this.id, this, params[key]);
+//        }
+        if (params) {
+            for (var key in this.paper.customAttributes) if (this.paper.customAttributes["hasOwnProperty"](key) && params["hasOwnProperty"](key) && R_is(this.paper.customAttributes[key], "function")) {
+                var par = this.paper.customAttributes[key].apply(this, [].concat(params[key]));
+                this.attrs[key] = params[key];
+                for (var subkey in par) if (par["hasOwnProperty"](subkey)) {
+                    params[subkey] = par[subkey];
+                }
+            }
+            // this.paper.canvas.style.display = "none";
+            if (params.text && this.type == "text") {
+                this.textpath.string = params.text;
+            }
+            setFillAndStroke(this, params);
+            // this.paper.canvas.style.display = E;
+        }
+        return this;
+    };
+    
+	function create_contact_icon(paper, contact,width_of_cell,offset, expand_edge) {
 		if (contact && contact.photo) {
 			
 			var sqrt3 = Math.sqrt(3);
@@ -2079,8 +2563,9 @@ function clone_graph_without_node(graph, node_id) {
 	        el.style.cssText = "position:absolute;left:0;top:0;width:1px;height:1px";
 	        var zoom = 21600;
 	        el.coordsize = zoom + " " + zoom;
+	        
 	        el.coordorigin = paper.coordorigin;
-	        var image = new Element(el, paper);
+	        var image = new RaphaelElement(el, paper);
 	        image.type = "path";
 	        image.path = [];
 	        image.Path = "";
@@ -2090,7 +2575,7 @@ function clone_graph_without_node(graph, node_id) {
 	        skew.on = true;
 	        el.appendChild(skew);
 	        image.skew = skew;
-	        image.transform("");
+//	        image.transform("");
 			
 			
 			image.attr({
@@ -2108,8 +2593,8 @@ function clone_graph_without_node(graph, node_id) {
 		}
 		else {
 			var color = window.Raphael.getColor();
-			return paper.ellipse(offset.x, offset.y, 20, 15)
-				.attr({fill: color, stroke: color, "stroke-width": 2,"cursor" : "pointer"});
+//TODO			return paper.ellipse(offset.x, offset.y, 20, 15)
+//				.attr({fill: color, stroke: color, "stroke-width": 2,"cursor" : "pointer"});
 		}
 		
 	}
