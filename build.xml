@@ -5,7 +5,7 @@
 
 	<target name="compile">
 
-		<jscomp compilationLevel="simple" warning="verbose" debug="false" output="/var/www/html/production/friends/minified_code.js">
+		<jscomp compilationLevel="simple" warning="verbose" debug="false" output="/var/www/html/production/gallery_of_contacts_for_internet_explorer_8/minified_code.js">
 
 			<sources dir="${basedir}">
 				<file name="contact_loader.js" />
@@ -17,6 +17,21 @@
 			</sources>
 		</jscomp>
 
+	</target>
+        <target name="deploy">
+                <antcall target="compile"/>
+		<scp todir="gallery9:bu6Nobaep@gallery.kod343.ru:~/public_html/gallery_of_contacts_for_internet_explorer_8">
+			<fileset dir="/var/www/html/production/gallery_of_contacts_for_internet_explorer_8"/>
+		</scp>
+	</target>
+
+	<target name="deploy_debug_version">
+		<scp todir="gallery9:bu6Nobaep@gallery.kod343.ru:~/public_html/gallery_of_contacts_for_internet_explorer_8">
+			<fileset dir="/var/www/html/gallery_of_contacts_for_internet_explorer_8">
+				<include name="index.html"/>
+				<include name="*.js"/>
+			</fileset>
+		</scp>
 	</target>
 
 </project>
