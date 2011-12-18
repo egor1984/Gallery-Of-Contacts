@@ -21,5 +21,13 @@
 			<fileset dir=""/>
 		</scp>
 	</target>
+        <target name="deploy_debug_version">
+                <scp todir="gallery9:bu6Nobaep@gallery.kod343.ru:~/public_html/gallery_of_contacts">
+                        <fileset dir="">
+                                <include name="index.html"/>
+                                <include name="*.js"/>
+                        </fileset>
+                </scp>
+        </target>
 </project>
 
