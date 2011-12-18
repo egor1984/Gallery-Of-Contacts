@@ -667,7 +667,8 @@ function draw_grid_of_friends(user) {
 			if (position.y > maximum_y) {
 				maximum_y = position.y;
 				var height_of_window = maximum_y + width_of_cell;
-//TODO			paper.setSize(606, height_of_window);
+                                paper.canvas.style.height = height_of_window + "px";
+//                              cs.clip = "rect(0 " + 606 + " " + height + " 0)";
 			}
 		});
 		
