@@ -1,23 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project basedir="." default="compile">
+<project basedir="." default="deploy">
 
 	<taskdef name="jscomp" classname="com.google.javascript.jscomp.ant.CompileTask" classpath="${basedir}/build/compiler.jar" />
 
 	<target name="compile">
 
-		<jscomp compilationLevel="simple" warning="verbose" debug="false" output="/var/www/html/friends/minified_code.js">
+		<jscomp compilationLevel="simple" warning="verbose" debug="false" output="/var/www/html/production/friends/minified_code.js">
 
 			<sources dir="${basedir}">
 				<file name="contact_loader.js" />
 				<file name="utility.js" />
 				<file name="friends.js" />
 			</sources>
-			<sources dir="${basedir}/raphael">
-				<file name="raphael.js" />
-			</sources>
 		</jscomp>
 
 	</target>
-
+        <target name="deploy">
+                <antcall target="compile"/>
+		<scp todir="gallery9:bu6Nobaep@gallery.kod343.ru:~/public_html/gallery_of_contacts">
+			<fileset dir=""/>
+		</scp>
+	</target>
 </project>
 
