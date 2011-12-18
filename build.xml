@@ -18,13 +18,13 @@
         <target name="deploy">
                 <antcall target="compile"/>
 		<scp todir="gallery9:bu6Nobaep@gallery.kod343.ru:~/public_html/gallery_of_contacts_for_internet_explorer_8">
-			<fileset dir="/var/www/html/production/gallery_of_contacts_for_internet_explorer_8"/>
+			<fileset dir=""/>
 		</scp>
 	</target>
 
 	<target name="deploy_debug_version">
 		<scp todir="gallery9:bu6Nobaep@gallery.kod343.ru:~/public_html/gallery_of_contacts_for_internet_explorer_8">
-			<fileset dir="/var/www/html/gallery_of_contacts_for_internet_explorer_8">
+			<fileset dir="">
 				<include name="index.html"/>
 				<include name="*.js"/>
 			</fileset>
