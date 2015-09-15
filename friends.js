@@ -3,32 +3,11 @@ setTimeout( function() {
 }, 500);
 
 function get_contact_url( uid) {
-	return "http://vkontakte.ru/id" + uid;
+	return "//vkontakte.ru/id" + uid;
 }
 
 var vk_loader = new contact_loader();
 
-var getProfiles_traits = {
-		"method_name" : "getProfiles"
-		,"parameters_builder" : function(details_requests) {
-			var uids = "";
-			for (var i = 0; i < details_requests.length; i++) {
-				if (i!=0) {
-					uids += ",";
-				}
-				uids += details_requests[i].parameters.contact.uid;
-			}				
-			return {uids:uids, fields:"uid,first_name,last_name,photo"};
-		}
-		,"response_handler" : function(parameters,response) {
-			for (var key in response){
-				if (key != "uid") {
-					parameters.contact[key] = response[key];
-				}
-			}
-		
-		}
-		,"max_sum" : 240};
 
 
 var friends_getMutual_traits = {"method_name" : "execute", "parameters_builder" : function(details_requests) {
@@ -78,7 +57,6 @@ var friends_getMutual_traits = {"method_name" : "execute", "parameters_builder" 
 var call_counter = 0;
 var l = -1;
 var clusters = new Array();
-var loaded_contacts = {};
 
 
 function get_app_user_uid()	{
@@ -88,7 +66,7 @@ function get_app_user_uid()	{
 //return 1895846;
 //return 4430857;
 
-	return Number(getUrlParameter(window.location.href, "user_id")); 
+	return Number(getUrlParameter(window.location.href, "viewer_id")); 
 }
 
 
@@ -348,30 +326,26 @@ function get_common_uids(groups,group_indexes) {
 	return common_uids;
 }
 
+var drawCommandIssued = false;
+
+function check_draw_grid_of_friends(user) {
+  if (!drawCommandIssued) {
+
+    draw_grid_of_friends(user);
+
+    drawCommandIssued = true;
+  }
+}
+
+
 
 function process_output(user) {
 	if (user.mutual_friends) {
 		var groups_3 = find_triples(user);
 		var groups = merge_groups(user, 4,11,groups_3);
 		
-		var uids = get_distinct_uids(groups);
-		var profiles_left_to_load = 0;
-		for (var uid in user.friends){
-			if (!loaded_contacts[uid]) {
-				loaded_contacts[uid] = {uid:uid};
-			}
-			var contact = loaded_contacts[uid];
-			if (!contact.first_name) {
-				profiles_left_to_load++;
-				vk_loader.load( getProfiles_traits, {contact:contact}, function(parameters,result_message){
-					profiles_left_to_load--;
-					if (profiles_left_to_load == 0) {
-						draw_grid_of_friends(user);
-					}
-				});
-			}
-					
-		}
+		//var uids = get_distinct_uids(groups);
+    check_draw_grid_of_friends(user);
 	}
 }
 
@@ -436,17 +410,19 @@ function get_sorted_values_in_grid(grid) {
 }
 
 function add_mutual_friends_recursively(user,uid,list,excludes) {
-	var mutual_friends = user.mutual_friends[uid];
-	if (mutual_friends) {
-		for (var i = 0; i < mutual_friends.length; i++) {
-			var mutual_friend_uid = mutual_friends[i];
-			if (!excludes[mutual_friend_uid]) {
-				list.push(mutual_friend_uid);
-				excludes[mutual_friend_uid] = true;
-				add_mutual_friends_recursively(user,mutual_friend_uid,list,excludes);
-			}
-		}
-	}
+  if (user.mutual_friends) {
+    var mutual_friends = user.mutual_friends[uid];
+    if (mutual_friends) {
+      for (var i = 0; i < mutual_friends.length; i++) {
+        var mutual_friend_uid = mutual_friends[i];
+        if (!excludes[mutual_friend_uid]) {
+          list.push(mutual_friend_uid);
+          excludes[mutual_friend_uid] = true;
+          add_mutual_friends_recursively(user,mutual_friend_uid,list,excludes);
+        }
+      }
+    }
+  }
 }
 
 function create_grid_of_friends(user,group, maximum_width) {
@@ -454,21 +430,24 @@ function create_grid_of_friends(user,group, maximum_width) {
 	for (var i = 0; i < group.length; i++) {
 		var friend_uid = group[i];
 		var indexes_of_placed_contacts = [];
-		var mutual_friends = user.mutual_friends[friend_uid];
-		if (mutual_friends) {
-			for (var j = 0; j < mutual_friends.length; j++) {
-				var uid_of_mutual_friend = mutual_friends[j];
-				var index_of_mutual_friend = get_index_in_grid(grid,uid_of_mutual_friend);
+    if (user.mutual_friends) {
+      var mutual_friends = user.mutual_friends[friend_uid];
+      if (mutual_friends) {
+        for (var j = 0; j < mutual_friends.length; j++) {
+          var uid_of_mutual_friend = mutual_friends[j];
+          var index_of_mutual_friend = get_index_in_grid(grid,uid_of_mutual_friend);
 
-				if (index_of_mutual_friend) {
-					indexes_of_placed_contacts.push(index_of_mutual_friend);
-				}						
-			}			
-		}
+          if (index_of_mutual_friend) {
+            indexes_of_placed_contacts.push(index_of_mutual_friend);
+          }						
+        }			
+      }
 
-		var middle_coordinate = get_middle_coordinate(indexes_of_placed_contacts);
-		var index_of_friend = get_nearest_free_index(grid,middle_coordinate, maximum_width);		
-		set_value_in_grid(grid,index_of_friend, friend_uid);		
+    }
+
+    var middle_coordinate = get_middle_coordinate(indexes_of_placed_contacts);
+    var index_of_friend = get_nearest_free_index(grid,middle_coordinate, maximum_width);		
+    set_value_in_grid(grid,index_of_friend, friend_uid);		
 	}
 	return grid;
 }
@@ -660,7 +639,7 @@ function draw_grid_of_friends(user) {
 							, y:(width_of_cell + width_of_border)*shifted_coordinate[1]};
 			
 			var area_element = document.getElementById("area");
-			draw_contact_icon(area_element,uid,position, width_of_cell, expand_edge);
+			draw_contact_icon(area_element,user.friends[uid],position, width_of_cell, expand_edge);
 			if (position.y > maximum_y) {
 				maximum_y = position.y;
 				var height_of_window = maximum_y + width_of_cell;
@@ -689,41 +668,39 @@ function getUrlParameter(url, parameterName) {
 
 //autorun on page load
 setTimeout( function() {
-
 	
 	VK.Modules.load('md5', function() {
-	});
+	}, "//vk.com/js/api/modules/md5.js");
 	
-	var userContact = {uid:get_app_user_uid()};
+  var userId = get_app_user_uid();
+	var userContact = {uid:userId};
 
-	loaded_contacts[userContact.uid] = userContact;
+  setTimeout(function() { check_draw_grid_of_friends(userContact); }, 3400);
 
-	
-	var result_string = getUrlParameter(window.location.href, "api_result");
-	var result = window.JSON.parse(unescape(result_string));
-	if (!result.response) {
-		if (result.error) {
-			alert(result.error.error_msg);
-			return;
-		}
-	}
-	userContact.friends = {};
-	for (var uid_index=0;uid_index<result.response.length;uid_index++) {
-		userContact.friends[result.response[uid_index]]=true;
-	}
+	//loaded_contacts[userContact.uid] = userContact;
 
-//	load_friends_of_contact_recursive(userContact, 0,function(contact) {
-		
+  VK.api("friends.get", {user_id: userId, fields:"uid,first_name,last_name,photo"}, function(data) { 
+    if (data.error) {
+      alert(data.error.error_msg);
+    }
+
+    userContact.friends = {};
+    for (var uid_index=0;uid_index<data.response.length;uid_index++) {
+      userContact.friends[data.response[uid_index].uid]=data.response[uid_index];
+    }
+
 		var friends_left_to_process = 0;
 		for (var uid in userContact.friends) {
 			friends_left_to_process++;
 			var friend = {uid:Number(uid)};
 			vk_loader.load(friends_getMutual_traits,{contact_1:userContact,contact_2:friend},function(parameters,result_message) {
+/*
 				if (result_message == "Success" 
 					&& parameters.contact_2.mutual_friends 
 					&& parameters.contact_2.mutual_friends[parameters.contact_1.uid]){
 					loaded_contacts[parameters.contact_2.uid] = parameters.contact_2;
 				}
+*/
 				friends_left_to_process--;
 				if (friends_left_to_process == 0) {
 					process_output(userContact);									
@@ -732,7 +709,10 @@ setTimeout( function() {
 				}				
 			});
 		}
-//	});
+  });
+	
+
+		
 	
 
 }, 0);
@@ -1218,10 +1198,8 @@ function clone_graph_without_node(graph, node_id) {
 		
 	}
 	
-	function draw_contact_icon(area_element,uid,position,width_of_cell, expand_edge) {
+	function draw_contact_icon(area_element,contact,position,width_of_cell, expand_edge) {
 		
-		var contact = loaded_contacts[uid];
-
 		var icon = create_contact_icon(area_element,contact,width_of_cell, position, expand_edge);
 	
 	}

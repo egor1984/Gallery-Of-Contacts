@@ -16,6 +16,10 @@ function get_request_key(traits, parameters)
 		key += "friends.getMutual,";
 		key += parameters.contact_1.uid + "," + parameters.contact_2.uid;
 		break;
+  case "friends.get":
+    key += "friends.get,";
+    key += parameters.uid;
+    break;
 	default:
 		alert("unsupported: traits.method_name == " + traits.method_name);
 		break;
@@ -39,7 +43,11 @@ function contact_loader()
 		
 		var key = get_request_key(traits, parameters);
 
-		var response = window.localStorage.getItem(key);
+    try {
+      var response = window.localStorage.getItem(key);
+    } catch (unused) {
+    }
+
 		if (response != null) {
 			traits.response_handler(parameters,window.JSON.parse(response));
 			setTimeout(function() {
@@ -155,7 +163,11 @@ function contact_loader()
 					var response = data.response[i];
 					
 					var key = get_request_key(traits, details_request.parameters);
-					window.localStorage.setItem(key,window.JSON.stringify(response));
+
+          try {
+            window.localStorage.setItem(key,window.JSON.stringify(response));
+          } catch (unused) {
+          }
 					
 					if (response == false) {
 						details_request.on_done(details_request.parameters, "Failure");
