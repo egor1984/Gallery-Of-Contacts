@@ -7,6 +7,18 @@
   <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
   <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
   <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+  <style>
+    svg {
+      display: block;
+      margin: 50px auto;
+    }
+
+    #loader 
+    { fill: #0088cc }
+
+    #border 
+    { fill: #00517a }
+  </style>
 </head>
 <body>
 <div id="canvas"></div>
@@ -33,10 +45,14 @@
       </ul>
     </div>
   </div>
+
 </nav>
 
  
-<svg id="area" width="607"   version="1.1">
+<svg id="area" width="607" height="400" version="1.1">
+  <text id="notice" x="50" y="50">Идёт загрузка смежных контактов...</text>
+  <path id="border"  transform="translate(225, 150)"/>
+  <path id="loader"  transform="translate(225, 150) scale(.84)"/>
 <defs>
 </defs>
 </svg>

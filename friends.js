@@ -1,4 +1,36 @@
 
+
+
+var alpha = 360
+  , pi = Math.PI
+  , t = 50;
+
+function draw() {
+
+var loader = document.getElementById('loader')
+  , border = document.getElementById('border')
+  if (loader) {
+
+    alpha -= 4;
+    alpha %= 360;
+    var r = ( alpha * pi / 180 )
+      , x = Math.sin( r ) * 50
+      , y = Math.cos( r ) * - 50
+      , mid = ( alpha > 180 ) ? 1 : 0
+      , anim = 'M 0 0 v -50 A 50 50 1 ' 
+             + mid + ' 1 ' 
+             +  x  + ' ' 
+             +  y  + ' z';
+   
+    loader.setAttribute( 'd', anim );
+    border.setAttribute( 'd', anim );
+    
+    setTimeout(draw, t); // Redraw
+  }
+};
+
+
+
 setTimeout( function() {
 }, 500);
 
@@ -330,10 +362,16 @@ var drawCommandIssued = false;
 
 function check_draw_grid_of_friends(user) {
   if (!drawCommandIssued) {
+     var elemBorder = document.getElementById('border');
+     elemBorder.parentNode.removeChild(elemBorder);
+     var elemLoader = document.getElementById('loader');
+     elemLoader.parentNode.removeChild(elemLoader);
+     var elemNotice = document.getElementById('notice');
+     elemNotice.parentNode.removeChild(elemNotice);
 
-    draw_grid_of_friends(user);
+     draw_grid_of_friends(user);
 
-    drawCommandIssued = true;
+     drawCommandIssued = true;
   }
 }
 
@@ -635,10 +673,10 @@ function draw_grid_of_friends(user) {
 				expand_edge.push(get_value_in_grid(grid, [ index_x, index_y]) == undefined);							
 			}
 			
+      var area_element = document.getElementById("area");
 			var position = {x:(width_of_cell + width_of_border)*shifted_coordinate[0]
 							, y:(width_of_cell + width_of_border)*shifted_coordinate[1]};
 			
-			var area_element = document.getElementById("area");
 			draw_contact_icon(area_element,user.friends[uid],position, width_of_cell, expand_edge);
 			if (position.y > maximum_y) {
 				maximum_y = position.y;
@@ -649,7 +687,7 @@ function draw_grid_of_friends(user) {
 		
 		
 	}
-	VK.callMethod("resizeWindow", 606, maximum_y + width_of_cell);				
+	VK.callMethod("resizeWindow", 606, maximum_y + width_of_cell + 100);				
 
 	
 	
@@ -669,13 +707,15 @@ function getUrlParameter(url, parameterName) {
 //autorun on page load
 setTimeout( function() {
 	
+  draw()
+
 	VK.Modules.load('md5', function() {
 	}, "//vk.com/js/api/modules/md5.js");
 	
   var userId = get_app_user_uid();
 	var userContact = {uid:userId};
 
-  setTimeout(function() { check_draw_grid_of_friends(userContact); }, 3400);
+  setTimeout(function() { check_draw_grid_of_friends(userContact); }, 4500);
 
 	//loaded_contacts[userContact.uid] = userContact;
 
@@ -1067,7 +1107,7 @@ function clone_graph_without_node(graph, node_id) {
 			if (expand_edge[point_index]) {
 				var line_width = delta[index_of_x_axis];
 				var line_height = delta[index_of_y_axis];
-				if (point_index == 2 || point_index ==5) {
+				if (point_index == 2 || point_index == 5) {
 					continue_shape(points,[line_width,0]);
 					continue_shape(points,[0,line_height]);
 				}
