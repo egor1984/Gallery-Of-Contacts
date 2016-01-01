@@ -719,7 +719,7 @@ setTimeout( function() {
 
 	//loaded_contacts[userContact.uid] = userContact;
 
-  VK.api("friends.get", {user_id: userId, fields:"uid,first_name,last_name,photo"}, function(data) { 
+  VK.api("friends.get", {user_id: userId, fields:"uid,first_name,last_name,photo,online"}, function(data) { 
     if (data.error) {
       alert(data.error.error_msg);
     }
@@ -1212,6 +1212,7 @@ function clone_graph_without_node(graph, node_id) {
 			image_element.setAttribute("y",lower_bound_of_image[1]);
 			image_element.setAttribute("width",width_of_cell);
 			image_element.setAttribute("height",width_of_cell);
+			image_element.setAttribute("opacity",contact.online ? 1: 0.6);
 			image_element.setAttribute("cursor","pointer");
 			var image_title = contact.first_name + " " + contact.last_name;
 			image_element.setAttributeNS("http://www.w3.org/1999/xlink","href",contact.photo);
