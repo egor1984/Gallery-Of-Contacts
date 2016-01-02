@@ -18,6 +18,15 @@
 
     #border 
     { fill: #00517a }
+
+    .navbar-custom {
+        background-color: transparent;
+        background: transparent;
+        border-color: transparent;
+
+        border-radius:0;
+    }
+
   </style>
 </head>
 <body>
@@ -31,15 +40,13 @@
 <script type="text/javascript" src="friends.js"></script>
 
 
-<nav class="navbar navbar-inverse">
+<nav class="navbar transparent navbar-custom" >
   <div class="container-fluid">
     <div>
       <ul class="nav navbar-nav">
-        <li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#">Справка<span class="caret"></span></a>
+        <li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#">О приложении<span class="caret"></span></a>
           <ul class="dropdown-menu">
-            <li style="color:white"><h4 align="center">Тут Ваши друзья, сгруппированные по отношениям между собой</h2></li>
-            <li><a href="//vk.com/yegor1984" target="_blank">Автор: Егор Алексеев</a></li>
-            <li><a href='//github.com/yegor-alexeyev/gallery-of-contacts' target="_blank">Страница проекта на github.com</a></li>
+            <li style="color:black"><h4 align="center">Перед вами отображены ваши контакты. Контакты разделены на группы, сформированные на основе их взаимных отношений между собой. Таким образом ваши контакты из института, например, оказываются в одной группе, рабочие контакты во второй, одноклассники - в третьей. Это позволяет легко находить нужного вам человека, не прибегая к вводу текста для поиска. Это особенно удобно пользовании социальной сетью с мобильных устройств не имеющих удобной клавиатуры</h2></li>
           </ul>
         </li>
       </ul>
