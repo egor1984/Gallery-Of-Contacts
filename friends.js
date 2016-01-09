@@ -719,7 +719,7 @@ setTimeout( function() {
 
 	//loaded_contacts[userContact.uid] = userContact;
 
-  VK.api("friends.get", {user_id: userId, fields:"uid,first_name,last_name,photo,online"}, function(data) { 
+  VK.api("friends.get", {user_id: userId, fields:"uid,first_name,last_name,photo_100,online"}, function(data) { 
     if (data.error) {
       alert(data.error.error_msg);
     }
@@ -1171,7 +1171,7 @@ function clone_graph_without_node(graph, node_id) {
 	
 	function create_contact_icon(area_element,contact,width_of_cell,offset, expand_edge) {
 
-		if (contact && contact.photo) {
+		if (contact && contact.photo_100) {
 			
 			var sqrt3 = Math.sqrt(3);
 
@@ -1212,10 +1212,9 @@ function clone_graph_without_node(graph, node_id) {
 			image_element.setAttribute("y",lower_bound_of_image[1]);
 			image_element.setAttribute("width",width_of_cell);
 			image_element.setAttribute("height",width_of_cell);
-			image_element.setAttribute("opacity",contact.online ? 1: 0.6);
 			image_element.setAttribute("cursor","pointer");
 			var image_title = contact.first_name + " " + contact.last_name;
-			image_element.setAttributeNS("http://www.w3.org/1999/xlink","href",contact.photo);
+			image_element.setAttributeNS("http://www.w3.org/1999/xlink","href",contact.photo_100);
 			image_element.setAttribute("clip-path", "url(#" + clipPathId + ")");
 
 			var anchor_element = document.createElementNS("http://www.w3.org/2000/svg","a");
@@ -1227,6 +1226,32 @@ function clone_graph_without_node(graph, node_id) {
 			anchor_element.appendChild(image_element)
 			
 			area_element.appendChild(anchor_element);
+
+      var status_index = 0;
+      var status_position_y = 0;
+      for (var i = 0; i < aligned_shape.length; i++) {
+        if (aligned_shape[i][1] >= status_position_y) {
+          status_index = i;
+          status_position_y = aligned_shape[i][1];
+        }
+      }
+        
+
+
+      if (contact.online == 1) {
+        var dx = status_index > 0 && aligned_shape[status_index][1] == aligned_shape[status_index - 1][1] ? 7 : 1.5;
+        var status_image_element = document.createElementNS("http://www.w3.org/2000/svg","circle");
+        status_image_element.setAttribute("cx",aligned_shape[status_index][0] - dx);
+        status_image_element.setAttribute("cy",aligned_shape[status_index][1] - 7);
+        status_image_element.setAttribute("r","5");
+        status_image_element.setAttribute("stroke","white");
+        status_image_element.setAttribute("stroke-width",2);
+        status_image_element.setAttribute("fill","#86a2c4");
+
+        area_element.appendChild(status_image_element);
+      }
+
+
 
 			return image_element;
 		}
